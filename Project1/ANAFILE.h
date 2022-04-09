@@ -40,6 +40,10 @@ namespace MyFuncClassApplication
 
 		int ReadFile(bool& allowOverride);
 		int ProcessAnalysisData();
+
+		//std::wstring BCDFileName();
+		int WriteBCDFileHeader(int numberOfSectionsInBCDFile) const;
+		//int SaveBCDFile(int i, CAnalysisSect& sect) const;
 	};
 }
 

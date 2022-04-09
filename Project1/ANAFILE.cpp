@@ -332,7 +332,7 @@ namespace MyFuncClassApplication
 	int CAnalysisFile::ProcessAnalysisData()//FitSplines
 	{
 		m_analysis->FitSplines();
-		
+		m_analysis->FillCells();
 		return 1;
 	}
 	CAnalysisFile::CAnalysisFile(void)
@@ -363,5 +363,59 @@ namespace MyFuncClassApplication
 		//	delete m_pFlavorFile;
 		if (m_analysis)
 			delete m_analysis;
+	}
+	//std::wstring CAnalysisFile::BCDFileName()
+	//{
+	//	wchar_t BCDFile[MAXBUFSZ];
+	//	wcscpy_s(BCDFile, m_fileName);
+	//	int pos = ReverseFind(BCDFile, wchar_t('.'));
+	//	if (pos > 0)
+	//		Left(BCDFile, pos, BCDFile);
+
+	//	wcscat_s(BCDFile, L".BCS");
+
+	//	return BCDFile;
+	//}
+	std::wstring getTraceIfAvailable(CAnalysis* analysis, const std::wstring& desiredTraceName)
+	{
+		for (int i = 0; i < analysis->m_numTraces; i++)
+		{
+			if (analysis->m_tnames[i] == desiredTraceName)
+			{
+				return analysis->m_traces[i];
+			}
+		}
+		return L"";
+	}
+	int CAnalysisFile::WriteBCDFileHeader(int numberOfSectionsInBCDFile) const
+	{
+		FILE* fp;
+		wchar_t tmp_fileName[MAXBUFSZ] = L"E:\\BladeExap\\219Template\\A-A.rpt";
+		_wfopen_s(&fp, tmp_fileName, L"wt");
+		if (!fp)
+			return 0;
+
+		fwprintf(fp, L"Title: BROWN & SHARPE %s\n", m_fileName);
+
+		std::wstring theSN = L"UNKNOWN";
+		const auto mbrNo = getTraceIfAvailable(m_analysis, L"MBRNO");
+		const auto partCount = getTraceIfAvailable(m_analysis, L"PARTCOUNT");
+
+		if (m_analysis->m_numTraces > 0 && mbrNo.length() > 0)
+		{
+			theSN = m_analysis->m_traces[0] + (L"-" + mbrNo);
+		}
+		else if (m_analysis->m_numTraces > 0)
+		{
+			theSN = m_analysis->m_traces[0] + (L"-" + partCount);
+		}
+
+		for (int i = 1; i < m_analysis->m_numTraces; i++)
+			fwprintf(fp, L"%s=%s ", m_analysis->m_tnames[i], m_analysis->m_traces[i]);
+
+		fwprintf(fp, L"\n%d %f S/N:%s\n", numberOfSectionsInBCDFile, m_analysis->m_probeRad, theSN.c_str());
+
+		fclose(fp);
+		return 1;
 	}
 }

@@ -23,5 +23,10 @@ namespace HiTest
 
         [DllImport(DLLPath, EntryPoint = "TestMatrix", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern void TestMatrix(int np);
+        [DllImport(DLLPath, EntryPoint = "Calculate", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void Calculate([MarshalAs(UnmanagedType.LPTStr)] string plaintext);
+
+        [DllImport(DLLPath, EntryPoint = "Release", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void Release();//释放
     }
 }

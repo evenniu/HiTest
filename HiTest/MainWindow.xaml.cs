@@ -29,7 +29,11 @@ namespace HiTest
             int iResult = ImportSimleDLL.Add(10, 3, ref sum);
             double d2 = ImportSimleDLL.Divide(10.0, 3.0);
             iResult = ImportSimleDLL.Multiply(10, 10);
+            string plainText = "12d33qwe";
+            
             ImportSimleDLL.TestMatrix(10);
+            ImportSimleDLL.Calculate(plainText);
+            //ImportSimleDLL.Release();
         }
     }
 }

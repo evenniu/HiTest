@@ -22,6 +22,8 @@ private:
 public:
 
 	bool IsValid();
+	CSection** m_section;
+
 	int NumSect()
 	{
 		return m_numSections;

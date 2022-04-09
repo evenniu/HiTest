@@ -288,12 +288,52 @@ namespace MyFuncClassApplication
 		fin.close();
 		m_pFlavorFile = new FlavorFile(flvName, rptPath);
 		m_analysis->m_pFlavor = m_pFlavorFile->m_flav;
+		bool isMathFile = false;
+		wchar_t mathCheck[MAXBUFSZ];
+		Right(m_nomFileName, 4, mathCheck);
+		MakeUpper(mathCheck);
+		if (wcscmp(mathCheck, L".MTH") == 0)
+			isMathFile = true;
+		if (isMathFile)
+		{
+			m_mathFileName[0] = 0;
+			//m_pNomFile = new CNominalFile(m_nomFileName, m_pTolFile, rptPath, m_mathFileName, m_analysis->m_statusBarHWND, m_analysis->m_processNomSection, false);
+
+		}
+		else
+		{
+			pos = ReverseFind(m_fileName, wchar_t('\\'));
+			if (pos > 0)
+			{
+				
+				wchar_t saveName[MAXBUFSZ];
+
+				wcscpy_s(saveName, m_fileName);
+
+				wchar_t ext[50];
+
+				wcscpy_s(m_fileName, m_nomFileName);
+				//FindFile(ext);
+
+				wcscpy_s(m_mathFileName, m_fileName);
+				wcscpy_s(m_fileName, saveName);
+			}
+
+		}
+		m_analysis->m_pBlade = new CBlade(m_mathFileName);
+		int numBlade = m_analysis->m_pBlade->NumSect();
 
 
 	}
-	int CAnalysisFile::ProcessAnalysisData()
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <returns></returns>
+	int CAnalysisFile::ProcessAnalysisData()//FitSplines
 	{
-		return m_analysis->FitSplines();
+		m_analysis->FitSplines();
+		
+		return 1;
 	}
 	CAnalysisFile::CAnalysisFile(void)
 	{

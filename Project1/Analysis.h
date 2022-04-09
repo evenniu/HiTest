@@ -74,7 +74,7 @@ public:
 class DLLEXPORT CAnalysis
 {
 public:
-	//CBladeError* m_error;     // last error holder
+	CBladeError* m_error;     // last error holder
 	wchar_t** m_tnames;
 	wchar_t** m_traces;
 	wchar_t** m_sectionNames;      // section names in report
@@ -162,8 +162,8 @@ public:
 	double m_probeRad;
 	CAnalysisSect *m_sect;
 	unsigned short* m_calc;
-	/*CBlade* m_pBlade;
-	CTolerance* m_pTol;*/
+	CBlade* m_pBlade;
+	/*CTolerance* m_pTol;*/
 	CFlavor* m_pFlavor;
 	
 	int* m_pBSect;                    // map from matrix sections into blade document sections

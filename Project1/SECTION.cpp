@@ -467,15 +467,22 @@ bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* 
     }
 
     Eigen::Vector4d t0, t1;
-    for (int s = 0; s < 4; s++)
+    /*for (int s = 0; s < 4; s++)
     {
         t0[s] = m_meaPart[s]->T0();
         t1[s] = m_meaPart[s]->T1();
-    }
+    }*/
     // polygonalize the measured curve
     auto measuredPolygon = Blade::polygonalizeWithT(*m_meaCurve, 2048, 1e-4);
     Eigen::MatrixX2d measuredPoints = std::get<0>(measuredPolygon).transpose();
     Eigen::VectorXd measuredT = std::get<1>(measuredPolygon);
+    for (int i = 0; i < m_totalPoints; i++)
+    {
+        double xyz[2], bxy[2], tanv[2], nv[2];
+        xyz[0] = m_mxpt[i] = xv[i];
+        xyz[1] = m_mypt[i] = yv[i];
+        int seed = i == 0 ? 400 : -1; // full search for 1st, point otherwise quick search
+    }
     return true;
 }
 int CSection::Chord(int flg, double* lcp, double* tcp, double* lctr, double* tctr, double* ltv, double* ttv, double* m,
@@ -639,4 +646,12 @@ int CSection::Chord(int flg, double* lcp, double* tcp, double* lctr, double* tct
     }
 
     return 1;
+}
+
+Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n)
+{
+    Eigen::Matrix2Xd points(2, n);
+    points.row(0) = Eigen::Map<const Eigen::RowVectorXd>(xValues, n);
+    points.row(1) = Eigen::Map<const Eigen::RowVectorXd>(yValues, n);
+    return points;
 }

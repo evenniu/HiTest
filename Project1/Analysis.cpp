@@ -2,7 +2,9 @@
 #include "Analysis.h"
 #include "Nurb.h"
 #include "SectionCurve.h"
-CAnalysis::CAnalysis() 
+#include "MeanCamberCurve.h"
+
+CAnalysis::CAnalysis(): m_error(new CBladeError())
 {
 	Initialize();
 }
@@ -38,6 +40,10 @@ int CAnalysis::FitSplines()
 	
 	for (i = 0; i < m_numSect; i++)
 	{
+		double voff = 0.0, uoff = 0.0;
+		double mtle = -1.0, mtte = -1.0;
+		double ler = -1.0, ter = -1.0;
+
 		if (m_sect[i].m_numPoints < 10) // trail trim problem or ???
 			continue;
 
@@ -120,10 +126,47 @@ int CAnalysis::FitSplines()
 				}
 			}
 		}
+		m_pBlade->m_section[i]->MeaCurve(whole);
+		CCurve* mcc = NULL;
+		if (mcc)
+			delete mcc;
+		Hexagon::Blade::MeanCamberCurveParameters mccParams;
+		mccParams.section = m_pBlade->m_section[i];
+		mccParams.analysisSection = &(m_sect[i]);
+		mccParams.flavor = m_pFlavor;
+		mccParams.ler = ler;
+		mccParams.ter = ter;
+		mccParams.uoff = uoff;
+		mccParams.voff = voff;
+		mccParams.mtle = mtle;
+		mccParams.mtte = mtte;
+		const bool isEnglish = true;//ccc->IsEnglish();
+		Hexagon::Blade::MeanCamberResult meanCamberResult;
+		try
+		{
+			meanCamberResult = Hexagon::Blade::createMeasuredMeanCamberCurve(mccParams, isEnglish);
+		}
+		catch (...)
+		{
+			std::wstring errorSection = L"measured section " + std::wstring(m_sect[i].m_sectName);
+			ErrorStruct es(BE_MEANCAMBERFAILED, errorSection.c_str());
+			m_error->AddError(&es);
+			break;
+		}
+		mcc = meanCamberResult.meanCamberCurve;
+		//if (!mcc->Valid())
+		//{
+		//	delete mcc;
+		//	/* ErrorStruct es(BE_MEANCAMBERFAILED, m_sect[i].m_sectName);
+		//	 m_error->AddError(&es);*/
+		//	 // return 1;
+		//}
+		m_pBlade->m_section[i]->AssignPoints(m_sect[i].x, m_sect[i].y, m_sect[i].m_numPoints, start, end);
+
 	}
 	if (i < m_numSect)
 		return 0;
-	return 4;
+	return 1;
 }
 void CAnalysis::Initialize()
 {
@@ -155,7 +198,7 @@ void CAnalysis::Initialize()
 	m_pFlavor = NULL;
 	//m_pTol = NULL;
 	//m_pPlat = NULL;
-	//m_pBlade = NULL;
+	m_pBlade = NULL;
 	m_sect = NULL;
 	m_pBSect = NULL;
 	m_pZone = NULL;
@@ -353,11 +396,16 @@ bool CAnalysis::FillCells()
 
 CAnalysis::~CAnalysis(void)
 {
+	if (m_error)
+	{
+		delete m_error;
+		m_error = nullptr;
+	}
 	if (m_pPlat)
 		delete m_pPlat;
 
-	//if (m_pBlade)
-	//	delete m_pBlade;
+	if (m_pBlade)
+		delete m_pBlade;
 
 	if (m_sect)
 		delete[] m_sect;

@@ -108,6 +108,24 @@
     <ClInclude Include="FlavorFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="LEVARTOL.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CBLADE.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ToleranceSection.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanCamberCurve.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NOMINALSECTION.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SECTION.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FUNClass.cpp">
@@ -192,6 +210,24 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Flavor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LEVARTOL.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CBLADE.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ToleranceSection.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MeanCamberCurve.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NOMINALSECTION.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SECTION.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

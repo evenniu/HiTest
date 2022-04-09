@@ -112,6 +112,20 @@ CCurve* readCurve(FILE* fp, const bool isEnglish)
 }
 bool CBlade::ReadFile(FILE* fp)
 {
+    fread(&m_numSections, sizeof(short), 1, fp);
+    fread(&m_english, sizeof(bool), 1, fp);
+    m_numSections = 1;
+    m_section = new CSection * [m_numSections];
+    wchar_t tbuf[MAXBUFSZ];
+    int i;
+    for (i = 0; i < m_numSections; i++)
+    {
+        CSection* sect = new CSection;
+        m_section[i] = sect;
+        double d;
+        fread(&d, sizeof(double), 1, fp);
+        m_section[i]->ZValue(d);
+    }
     return true;
 }
 //bool CBlade::FitBlade(const CFitParams* fp, int sec1, int sec2)

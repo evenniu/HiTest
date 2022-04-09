@@ -56,6 +56,7 @@ namespace MyApp
 			m_noms->m[i][0] = i;
 			m_noms->m[i][1] = i*i;
 		}
+		//const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(m_mxpt, m_mypt, m_totalPoints);
 	}
 	void FUNClass::Calculate(wstring plaintext)
 	{
@@ -71,7 +72,7 @@ namespace MyApp
 				return;
 			}
 
-			readFileReturnValue = m_cAnalysisFile->ProcessAnalysisData();
+			readFileReturnValue = m_cAnalysisFile->ProcessAnalysisData();//FitSplines
 		}
 		catch (const std::exception& e)
 		{

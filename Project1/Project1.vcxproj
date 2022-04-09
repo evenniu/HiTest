@@ -123,7 +123,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Release\v140\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Release\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Release\v140\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Release\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>GDT.lib;GDT_CPlusPlusInterface.lib;libqhull.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -151,6 +151,7 @@
     <ClInclude Include="Analysis.h" />
     <ClInclude Include="ArraySlicing.h" />
     <ClInclude Include="BladeError.h" />
+    <ClInclude Include="CBLADE.h" />
     <ClInclude Include="CIRCLE.H" />
     <ClInclude Include="CONSTANTS.H" />
     <ClInclude Include="CURVE.H" />
@@ -162,12 +163,16 @@
     <ClInclude Include="FlavorFile.h" />
     <ClInclude Include="FUNClass.h" />
     <ClInclude Include="HermiteCurve.h" />
+    <ClInclude Include="LEVARTOL.H" />
     <ClInclude Include="LEVMARQ.H" />
     <ClInclude Include="MATHUTIL.H" />
     <ClInclude Include="MATRIX.H" />
+    <ClInclude Include="MeanCamberCurve.h" />
     <ClInclude Include="MINSTOCK.H" />
+    <ClInclude Include="NOMINALSECTION.H" />
     <ClInclude Include="NURB.H" />
     <ClInclude Include="ODRSPLINE.H" />
+    <ClInclude Include="SECTION.h" />
     <ClInclude Include="SectionCurve.h" />
     <ClInclude Include="SmallestCircle.h" />
     <ClInclude Include="SORTER.H" />
@@ -175,6 +180,7 @@
     <ClInclude Include="StringUtil.h" />
     <ClInclude Include="SUBCURVE.H" />
     <ClInclude Include="TemplateHermiteSpline.h" />
+    <ClInclude Include="ToleranceSection.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AbstractCurve.cpp" />
@@ -183,6 +189,7 @@
     <ClCompile Include="ANAFILE.cpp" />
     <ClCompile Include="Analysis.cpp" />
     <ClCompile Include="BladeError.cpp" />
+    <ClCompile Include="CBLADE.cpp" />
     <ClCompile Include="CIRCLE.CPP" />
     <ClCompile Include="CURVE.CPP" />
     <ClCompile Include="CurvePolygon.cpp" />
@@ -193,18 +200,23 @@
     <ClCompile Include="FlavorFile.cpp" />
     <ClCompile Include="FUNClass.cpp" />
     <ClCompile Include="HermiteCurve.cpp" />
+    <ClCompile Include="LEVARTOL.CPP" />
     <ClCompile Include="LEVMARQ.CPP" />
     <ClCompile Include="MATHUTIL.CPP" />
     <ClCompile Include="MATRIX.CPP" />
+    <ClCompile Include="MeanCamberCurve.cpp" />
     <ClCompile Include="MINSTOCK.CPP" />
+    <ClCompile Include="NOMINALSECTION.CPP" />
     <ClCompile Include="NURB.CPP" />
     <ClCompile Include="ODRSPLINE.CPP" />
+    <ClCompile Include="SECTION.cpp" />
     <ClCompile Include="SectionCurve.cpp" />
     <ClCompile Include="SmallestCircle.cpp" />
     <ClCompile Include="SORTER.CPP" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="StringUtil.cpp" />
     <ClCompile Include="SUBCURVE.CPP" />
+    <ClCompile Include="ToleranceSection.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,8 +13,9 @@ using namespace std;
 #include "CURVE.H"
 #include "CONSTANTS.H"
 //#include "BESTFIT.H"
-////#include "SECTION.H"
-//#include "BladeError.h"
+#include "SECTION.H"
+#include "BladeError.h"
+#include "CBLADE.H"
 
 //-#include "AlwaysAssert.h"
 

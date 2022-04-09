@@ -183,7 +183,7 @@ int CCurve::Extreme(double *v, double *et, double *ep, double pt0, double pt1, i
   {
     *et = 0.5*(bt0 + bt1);
     CalcPoint(xyz, *et, tv);
-    //normalize(tv,tv);
+    normalize(tv,tv);
     de = dot(nv,tv);
     if (fabs(de) < 1.0e-4) // close enough
     {
@@ -232,7 +232,7 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
 
   nv[0] = tv[1];
   nv[1] = -tv[0];
-  //normalize(nv,nv);  // nv is unit vector normal to curve
+  normalize(nv,nv);  // nv is unit vector normal to curve
   td = (pt1 - pt0)/15.0;
   bt1 = pt0 - td;
   for (i=0; i<16; i++)  // find bracketing t's
@@ -240,9 +240,9 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
     bt0 = bt1;
     bt1 += td;
     CalcPoint(xy, bt1, tanv);
-   // normalize(tanv,tanv);
+   normalize(tanv,tanv);
     d0 = d1;
-   // d1 = dot(nv,tanv);
+   d1 = dot(nv,tanv);
     if (dot(tv,tanv) < 0.0)  // pointing in wrong direction
       continue;
 

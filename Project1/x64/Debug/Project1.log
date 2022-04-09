@@ -1,13 +1,28 @@
-﻿  AES.cpp
-E:\B_VSPRO\Hitest2\HiTest\Project1\AES.cpp(61,13): warning C4101: “i”: 未引用的局部变量
-  ExportFUNClass.cpp
-E:\B_VSPRO\Hitest2\HiTest\Project1\FUNClass.h(11,12): warning C4251: “MyApp::FUNClass::m_sName”: class“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”需要有 dll 接口由 class“MyApp::FUNClass”的客户端使用
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\xstring(4906): message : 参见“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”的声明
-  FUNClass.cpp
-E:\B_VSPRO\Hitest2\HiTest\Project1\FUNClass.h(11,12): warning C4251: “MyApp::FUNClass::m_sName”: class“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”需要有 dll 接口由 class“MyApp::FUNClass”的客户端使用
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\xstring(4906): message : 参见“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”的声明
-  MATRIX.CPP
-  stdafx.cpp
-  正在生成代码...
-    正在创建库 E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.lib 和对象 E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.exp
+﻿  ANAFILE.cpp
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(43,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(44,83): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(47,12): warning C4477: “printf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 1 拥有了类型“unsigned __int64”
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(47,12): message : 请考虑在格式字符串中使用“%zd”
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(55,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(56,89): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(64,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(65,89): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(73,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(74,86): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(82,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(83,82): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(111,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(112,82): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(124,32): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(125,82): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(136,33): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(137,83): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(194,34): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(195,84): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(31,8): warning C4101: “charStrs”: 未引用的局部变量
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(30,11): warning C4101: “textINfo”: 未引用的局部变量
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(32,9): warning C4101: “pCStrKey”: 未引用的局部变量
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(164,10): warning C4101: “s”: 未引用的局部变量
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(300,11): warning C4101: “rptPath”: 未引用的局部变量
+E:\B_VSPRO\Hitest2\HiTest\Project1\ANAFILE.cpp(293): warning C4715: “MyFuncClassApplication::CAnalysisFile::ReadFile”: 不是所有的控件路径都返回值
   Project1.vcxproj -> E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.dll

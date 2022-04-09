@@ -10,6 +10,7 @@ namespace MyApp
 		m_iResult = -1;
 		m_sName = L"";
 		m_aes = new AES(key);
+		m_cAnalysisFile = new CAnalysisFile();
 		
 	}
 	FUNClass::~FUNClass(void)
@@ -18,6 +19,8 @@ namespace MyApp
 			delete m_aes;
 		if (m_noms)
 			delete m_noms;
+		if (m_cAnalysisFile)
+			delete m_cAnalysisFile;
 	}
 	int FUNClass::Add(int a, int b, int& sum)
 	{
@@ -52,6 +55,29 @@ namespace MyApp
 		{
 			m_noms->m[i][0] = i;
 			m_noms->m[i][1] = i*i;
+		}
+	}
+	void FUNClass::Calculate(wstring plaintext)
+	{
+		std::string str;
+		int nLen = (int)plaintext.length();
+		int readFileReturnValue = 0;
+
+		try
+		{
+			readFileReturnValue = m_cAnalysisFile->ReadFile(g_allowOverride);
+			if (readFileReturnValue == false)
+			{
+				return;
+			}
+
+			readFileReturnValue = m_cAnalysisFile->ProcessAnalysisData();
+		}
+		catch (const std::exception& e)
+		{
+			//const CString errorMessage = CString(L"Unhandled exception during reading input files: ") + e.what();
+		   // AfxMessageBox(errorMessage);
+			return;
 		}
 	}
 }

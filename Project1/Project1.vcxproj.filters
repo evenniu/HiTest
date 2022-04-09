@@ -30,6 +30,84 @@
     <ClInclude Include="MATRIX.H">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="StringUtil.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MATHUTIL.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractCurve.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CurvePolygon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HermiteCurve.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TemplateHermiteSpline.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CURVE.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ALIGNMENT.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArraySlicing.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="EigenAbstractCurve.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LEVMARQ.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SORTER.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ODRSPLINE.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CONSTANTS.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CIRCLE.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SUBCURVE.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SectionCurve.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SmallestCircle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BladeError.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Dimension.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NURB.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MINSTOCK.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ANAFILE.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Analysis.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Flavor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FlavorFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FUNClass.cpp">
@@ -45,6 +123,75 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="MATRIX.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="StringUtil.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MATHUTIL.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AbstractCurve.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePolygon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HermiteCurve.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CURVE.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ALIGNMENT.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="EigenAbstractCurve.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LEVMARQ.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SORTER.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ODRSPLINE.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CIRCLE.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SUBCURVE.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SectionCurve.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SmallestCircle.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BladeError.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NURB.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MINSTOCK.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ANAFILE.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Analysis.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="FlavorFile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Flavor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

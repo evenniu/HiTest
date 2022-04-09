@@ -2,6 +2,8 @@
 #include <string>
 #include "AES.h"
 #include "stdafx.h"
+#include "ANAFILE.h"
+using namespace MyFuncClassApplication;
 using namespace std;
 namespace MyApp
 {
@@ -13,7 +15,7 @@ namespace MyApp
 		bool g_allowOverride;
 		AES* m_aes;
 		CMatrix* m_noms;
-
+		CAnalysisFile* m_cAnalysisFile;
 	public:
 		FUNClass(void);
 		~FUNClass(void);
@@ -25,5 +27,6 @@ namespace MyApp
 		double Multiply(double a, double b);
 		double Divide(double a, double b);
 		void TestMatrix(int np);
+		void Calculate(wstring plaintext);
 	};
 }

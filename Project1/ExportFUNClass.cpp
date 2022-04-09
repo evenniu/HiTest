@@ -36,7 +36,7 @@ extern "C" __declspec(dllexport) void enycode(LPCTSTR plaintext)
 }
 extern "C" __declspec(dllexport) void Calculate(LPCTSTR plaintext)
 {
-	//g_pSimple->Calculate(plaintext);
+	g_pSimple->Calculate(plaintext);
 }
 extern "C" __declspec(dllexport) void Release()
 {

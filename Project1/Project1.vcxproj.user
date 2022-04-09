@@ -4,4 +4,7 @@
     <LocalDebuggerCommand>$(SolutionDir)HiTest\bin\Debug\HiTest.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
 </Project>

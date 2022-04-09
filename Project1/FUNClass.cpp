@@ -23,6 +23,7 @@ namespace MyApp
 	{
 		m_iResult = m_aes->add(a, b);
 		sum = m_iResult;
+		m_aes->TestEigen();
 		return  m_iResult;
 	}
 	int FUNClass::Add1(int a, int b)

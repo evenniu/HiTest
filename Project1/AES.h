@@ -1,5 +1,8 @@
 #pragma once
+#include <Eigen/Dense>
+
 #define DLLEXPORT __declspec(dllexport)
+
 namespace MyApp
 {
 	class DLLEXPORT  AES
@@ -18,5 +21,6 @@ namespace MyApp
 		void KeyExpansion(unsigned char* key, unsigned char w[][4][4]);
 		int strToUChar(const char* ch, unsigned char* uch);
 		int add(int a, int b);
+		int TestEigen();
 	};
 }

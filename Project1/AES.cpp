@@ -151,4 +151,16 @@ namespace MyApp
     {
         return a + b;
     }
+    int AES::TestEigen()
+    {
+        Eigen::Matrix2d mat;
+        mat << 1, 2,
+               3, 4;
+        Eigen::MatrixXd b(2, 2);
+        b << 5, 6,
+             7, 8;
+        Eigen::Vector3d v(1, 2, 3);
+        Eigen::Vector3d w(1, 0, 0);
+        return 0;
+    }
 }

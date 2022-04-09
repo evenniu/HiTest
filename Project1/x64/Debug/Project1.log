@@ -1,0 +1,13 @@
+﻿  AES.cpp
+E:\B_VSPRO\Hitest2\HiTest\Project1\AES.cpp(61,13): warning C4101: “i”: 未引用的局部变量
+  ExportFUNClass.cpp
+E:\B_VSPRO\Hitest2\HiTest\Project1\FUNClass.h(11,12): warning C4251: “MyApp::FUNClass::m_sName”: class“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”需要有 dll 接口由 class“MyApp::FUNClass”的客户端使用
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\xstring(4906): message : 参见“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”的声明
+  FUNClass.cpp
+E:\B_VSPRO\Hitest2\HiTest\Project1\FUNClass.h(11,12): warning C4251: “MyApp::FUNClass::m_sName”: class“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”需要有 dll 接口由 class“MyApp::FUNClass”的客户端使用
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\include\xstring(4906): message : 参见“std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>”的声明
+  MATRIX.CPP
+  stdafx.cpp
+  正在生成代码...
+    正在创建库 E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.lib 和对象 E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.exp
+  Project1.vcxproj -> E:\B_VSPRO\Hitest2\HiTest\HiTest\bin\Debug\Project1.dll

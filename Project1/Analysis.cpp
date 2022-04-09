@@ -223,65 +223,65 @@ void CAnalysis::Initialize()
 	m_refchdangnom = m_refchdangact = 0.0;
 	m_extraTolerance = 0.0;
 }
-/*
+
 bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, double* mtols, double* ptols)
 {
-	CFitParams fp;
-	fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
-	fp.weightcurve[CVC] = 1;
-	fp.weightcurve[CCC] = 1;
-	fp.weightcurve[LEC] = 1;
-	fp.weightcurve[TEC] = 1;
-	fp.rotfit = 0;
+	//CFitParams fp;
+	//fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
+	//fp.weightcurve[CVC] = 1;
+	//fp.weightcurve[CCC] = 1;
+	//fp.weightcurve[LEC] = 1;
+	//fp.weightcurve[TEC] = 1;
+	//fp.rotfit = 0;
 	int bs = m_pBSect[r];
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 	if (ts < 0)
 		return false;
-	if (typ == BladeBestFitType::BestFitLeastSquares)
-	{
-		if (m_pBestFitSection[r][bfind] >= 0)
-			return true;
-		fp.algorithm = BestFitAlgorithm::LeastSquares; // ls fit
+	//if (typ == BladeBestFitType::BestFitLeastSquares)
+	//{
+	//	if (m_pBestFitSection[r][bfind] >= 0)
+	//		return true;
+	//	fp.algorithm = BestFitAlgorithm::LeastSquares; // ls fit
 
-		//fp.fitcurve[CVC] = m_pFlavor->m_useCV[bfind] ? 1 : 0;
-		//fp.fitcurve[CCC] = m_pFlavor->m_useCC[bfind] ? 1 : 0;
-		//fp.fitcurve[LEC] = m_pFlavor->m_useLE[bfind] ? 1 : 0;
-		//fp.fitcurve[TEC] = m_pFlavor->m_useTE[bfind] ? 1 : 0;
+	//	//fp.fitcurve[CVC] = m_pFlavor->m_useCV[bfind] ? 1 : 0;
+	//	//fp.fitcurve[CCC] = m_pFlavor->m_useCC[bfind] ? 1 : 0;
+	//	//fp.fitcurve[LEC] = m_pFlavor->m_useLE[bfind] ? 1 : 0;
+	//	//fp.fitcurve[TEC] = m_pFlavor->m_useTE[bfind] ? 1 : 0;
 
-		//fp.weightcurve[CVC] = m_pFlavor->m_weightCV[bfind];
-		//fp.weightcurve[CCC] = m_pFlavor->m_weightCC[bfind];
-		//fp.weightcurve[LEC] = m_pFlavor->m_weightLE[bfind];
-		//fp.weightcurve[TEC] = m_pFlavor->m_weightTE[bfind];
-		//if (m_pFlavor->m_noTranslate[bfind])
-		//	fp.tranfit = 1; // no translation
-		//else
-		//	fp.tranfit = 0; // full translation allowed
+	//	//fp.weightcurve[CVC] = m_pFlavor->m_weightCV[bfind];
+	//	//fp.weightcurve[CCC] = m_pFlavor->m_weightCC[bfind];
+	//	//fp.weightcurve[LEC] = m_pFlavor->m_weightLE[bfind];
+	//	//fp.weightcurve[TEC] = m_pFlavor->m_weightTE[bfind];
+	//	//if (m_pFlavor->m_noTranslate[bfind])
+	//	//	fp.tranfit = 1; // no translation
+	//	//else
+	//	//	fp.tranfit = 0; // full translation allowed
 
-		if (m_pFlavor->m_noRotate[bfind])
-			fp.rotfit = 1; // no rotation
-		else
-			fp.rotfit = 0; // full rotation allowed
+	//	if (m_pFlavor->m_noRotate[bfind])
+	//		fp.rotfit = 1; // no rotation
+	//	else
+	//		fp.rotfit = 0; // full rotation allowed
 
-		if (fp.fitcurve[LEC] && !fp.fitcurve[CVC] && !fp.fitcurve[CCC] && !fp.fitcurve[TEC])
-			fp.pivot = 1;
-		else if (fp.fitcurve[TEC] && !fp.fitcurve[CVC] && !fp.fitcurve[CCC] && !fp.fitcurve[LEC])
-			fp.pivot = 3;
-		switch (m_pFlavor->m_Transfit_bf[bfind])
-		{
-		case 0:
-			fp.tranfit = 0;
-			break;
-		case 1:
-			fp.tranfit = 1;
-			break;
-		case 2:
-			fp.tranfit = 4;
-			break;
-		case 3:
-			fp.tranfit = 5;
-			break;
-		}
-	}
+	//	if (fp.fitcurve[LEC] && !fp.fitcurve[CVC] && !fp.fitcurve[CCC] && !fp.fitcurve[TEC])
+	//		fp.pivot = 1;
+	//	else if (fp.fitcurve[TEC] && !fp.fitcurve[CVC] && !fp.fitcurve[CCC] && !fp.fitcurve[LEC])
+	//		fp.pivot = 3;
+	//	switch (m_pFlavor->m_Transfit_bf[bfind])
+	//	{
+	//	case 0:
+	//		fp.tranfit = 0;
+	//		break;
+	//	case 1:
+	//		fp.tranfit = 1;
+	//		break;
+	//	case 2:
+	//		fp.tranfit = 4;
+	//		break;
+	//	case 3:
+	//		fp.tranfit = 5;
+	//		break;
+	//	}
+	//}
 	try
 	{
 		//if (m_pBlade->m_section[bs]->FitPointV2(fp, m_pBestFitSection[r][bfind], inchSize(), mtols, ptols))
@@ -291,11 +291,11 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	{
 		return false;
 	}
-	bugout(0, L"CalcAlign: rotfit %d tranfit %d ****", fp.rotfit, fp.tranfit);
+	//bugout(0, L"CalcAlign: rotfit %d tranfit %d ****", fp.rotfit, fp.tranfit);
 
 	return false;
 }
-*/
+
 bool CAnalysis::Locate(int r, double* xy, int doingBow)
 {
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;

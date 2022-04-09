@@ -188,7 +188,7 @@ public:
 	int ReOrder(CAnalysisSect& sect, int* n1, int* n2, int types);
 	int FitSplines();
 	void Initialize();
-	//bool CalcAlign(int r, BladeBestFitType typ, int doingBow = 0, int bfind = 0, double* mtols = NULL, double* ptols = NULL);
+	bool CalcAlign(int r, BladeBestFitType typ, int doingBow = 0, int bfind = 0, double* mtols = NULL, double* ptols = NULL);
 	bool Locate(int r, double* xy, int doingBow);
 	bool FillCells();
 	double inchSize() const

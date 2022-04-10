@@ -331,6 +331,54 @@ void CSection::AddTol(int i, double* mptol)
     m_mtol[i] = mptol[0];
     m_ptol[i] = mptol[1];
 }
+Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n)
+{
+    Eigen::Matrix2Xd points(2, n);
+    points.row(0) = Eigen::Map<const Eigen::RowVectorXd>(xValues, n);
+    points.row(1) = Eigen::Map<const Eigen::RowVectorXd>(yValues, n);
+    return points;
+}
+struct ChordInformation
+{
+    Eigen::Vector2d leadingPoint, trailingPoint, leadingCenter, trailingCenter, leadingVector, trailingVector;
+};
+/// <summary>
+/// 
+/// </summary>
+/// <param name="index"></param>
+/// <param name="inchSize"></param>
+/// <param name="mtols"></param>
+/// <param name="ptols"></param>
+/// <returns></returns>
+bool CSection::FitPoints(int& index, double inchSize, double* mtols, double* ptols)
+{
+   // const auto sectionCurve = Hexagon::Blade::nominalSectionCurve(this);
+    const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(m_mxpt, m_mypt, m_totalPoints);
+    bugout(0, L"FitPoints:m_totalPoints(%d) entered ****", m_totalPoints);
+    const Eigen::Map<const Eigen::ArrayXi> partOf(m_partOf, m_totalPoints);
+    ChordInformation nominalChordInfo;
+    if (!Chord(0, nominalChordInfo.leadingPoint.data(), nominalChordInfo.trailingPoint.data(),
+        nominalChordInfo.leadingCenter.data(), nominalChordInfo.trailingCenter.data(),
+        nominalChordInfo.leadingVector.data(), nominalChordInfo.trailingVector.data()))
+    {
+        //return false;//ÁÙÊ±×¢ÊÍµô
+    }
+    ChordInformation measuredChordInfo;
+    if (!Chord(1, measuredChordInfo.leadingPoint.data(), measuredChordInfo.trailingPoint.data(),
+        measuredChordInfo.leadingCenter.data(), measuredChordInfo.trailingCenter.data(),
+        measuredChordInfo.leadingVector.data(), measuredChordInfo.trailingVector.data()))
+    {
+        //return false;//ÁÙÊ±×¢ÊÍµô
+    }
+
+    // construct inner and outer tolerance curves if applicable
+    const ptrdiff_t numFineSamples = 16384;
+    const Eigen::VectorXd fineNominalTValues =
+        Eigen::VectorXd::LinSpaced(numFineSamples + 1, NomCurve()->t0(), NomCurve()->t1()).head(numFineSamples);
+    const Eigen::Matrix2Xd fineNominalPoints = Hexagon::Blade::evaluate(*NomCurve(), fineNominalTValues);
+
+    return true;
+}
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)
 {
     // this is for closed curve for P&W AS file read and analysis file
@@ -476,12 +524,34 @@ bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* 
     auto measuredPolygon = Blade::polygonalizeWithT(*m_meaCurve, 2048, 1e-4);
     Eigen::MatrixX2d measuredPoints = std::get<0>(measuredPolygon).transpose();
     Eigen::VectorXd measuredT = std::get<1>(measuredPolygon);
+
+    // polygonalize the nominal curve
+    auto nominalPolygon = Blade::polygonalizeWithT(*m_nomCurve, 2048, 1e-4);
+    Eigen::MatrixX2d nominalPoints = std::get<0>(nominalPolygon).transpose();
+    Eigen::VectorXd nominalT = std::get<1>(nominalPolygon);
+
+    // construct KD trees of the measured and nominal curves
+    //typedef nanoflann::KDTreeEigenMatrixAdaptor<Eigen::MatrixX2d, 2> KDTree;
+    //KDTree nominalKDtree(2 /*dimensions*/, nominalPoints, 10 /*max leaf*/);
+    //KDTree measuredKDtree(2 /*dimensions*/, measuredPoints, 10 /*max leaf*/);
+
+    //// map arrays of the inputs
+    //Eigen::Matrix2Xd points(2, m_totalPoints);
+    //points.row(0) = Eigen::Map<const Eigen::VectorXd>(xv, m_totalPoints).transpose();
+    //points.row(1) = Eigen::Map<const Eigen::VectorXd>(yv, m_totalPoints).transpose();
+
+
+
     for (int i = 0; i < m_totalPoints; i++)
     {
         double xyz[2], bxy[2], tanv[2], nv[2];
         xyz[0] = m_mxpt[i] = xv[i];
         xyz[1] = m_mypt[i] = yv[i];
         int seed = i == 0 ? 400 : -1; // full search for 1st, point otherwise quick search
+    }
+    for (int i = 0; i < m_totalPoints; i++)
+    {
+        m_partOf[i] = 0;
     }
     return true;
 }
@@ -647,11 +717,29 @@ int CSection::Chord(int flg, double* lcp, double* tcp, double* lctr, double* tct
 
     return 1;
 }
-
-Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n)
+bool isNear_periodic(double t1, double t2, double period)
 {
-    Eigen::Matrix2Xd points(2, n);
-    points.row(0) = Eigen::Map<const Eigen::RowVectorXd>(xValues, n);
-    points.row(1) = Eigen::Map<const Eigen::RowVectorXd>(yValues, n);
-    return points;
+    return std::abs(std::remainder(t2 - t1, period)) < 1e-3;
 }
+
+bool isWithinOrNear_periodic(double t, const Hexagon::Blade::Curve<2>& curve)
+{
+    return isNear_periodic(t, curve.t0(), curve.period()) || isNear_periodic(t, curve.t1(), curve.period()) ||
+        Hexagon::Blade::tIsInSubcurve(t, curve, curve.period());
+}
+//std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
+//    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
+//    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
+//{
+//    Eigen::Vector2d nominalPoint, nominalTangent;
+//    std::tie(nominalPoint, nominalTangent) =
+//        Hexagon::Blade::evaluateWithDerivative(nominalCurve, Eigen::Map<const Eigen::VectorXd>(&nominalTValue, 1));
+//    const Eigen::Vector2d measuredPoint =
+//        Hexagon::Blade::evaluate(measuredCurve, Eigen::Map<const Eigen::VectorXd>(&measuredTValue, 1));
+//    const Eigen::Vector2d nominalNormal = (Hexagon::Blade::makeRotate90() * nominalTangent).normalized();
+//    if (canMakeLinearDeviationHere(nominalTValue))
+//    {
+//        return std::make_unique<const Hexagon::Blade::LinearDeviation>(nominalPoint, nominalNormal, measuredPoint);
+//    }
+//    return nullptr;
+//}

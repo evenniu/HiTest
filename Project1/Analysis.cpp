@@ -127,6 +127,7 @@ int CAnalysis::FitSplines()
 			}
 		}
 		m_pBlade->m_section[i]->MeaCurve(whole);
+		m_pBlade->m_section[i]->NomCurve(whole);
 		CCurve* mcc = NULL;
 		if (mcc)
 			delete mcc;
@@ -246,6 +247,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	//fp.weightcurve[TEC] = 1;
 	//fp.rotfit = 0;
 	int bs = m_pBSect[r];
+	bs = 0;
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 	if (ts < 0)
 		return false;
@@ -297,6 +299,8 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	try
 	{
 		//if (m_pBlade->m_section[bs]->FitPoint(fp, m_pBestFitSection[r][bfind], inchSize(), mtols, ptols))
+		int tmp_index = m_pBestFitSection[r][bfind];
+		if (m_pBlade->m_section[bs]->FitPoints(tmp_index, inchSize(), mtols, ptols))
 			return true;
 	}
 	catch (...)
@@ -403,6 +407,14 @@ bool CAnalysis::FillCells()
 			m_pZoneNew = new double* [m_numSect];
 			m_pZoneX = new double* [m_numSect];
 			m_pZoneY = new double* [m_numSect];
+		}
+
+		m_pBestFitSection = new int* [m_numSect];
+		for (i = 0; i < m_numSect; i++)
+		{
+			m_pBestFitSection[i] = new int[MAXFITS];
+			for (int jj = 0; jj < MAXFITS; jj++)
+				m_pBestFitSection[i][jj] = -1;
 		}
 		for (int ss = 0; ss < m_numSect; ss++)
 		{

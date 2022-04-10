@@ -334,7 +334,7 @@ void CSection::AddTol(int i, double* mptol)
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)
 {
     // this is for closed curve for P&W AS file read and analysis file
-    bugout(0, L"CSection::AssignPoints: m_totalPoints %d", m_totalPoints);
+    bugout(0, L"CSection::AssignPoints: m_totalPoints %d", n);
 
     m_totalPoints = n;
     m_cxpt = new double[m_totalPoints];

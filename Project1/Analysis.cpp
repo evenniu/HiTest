@@ -224,8 +224,20 @@ void CAnalysis::Initialize()
 	m_extraTolerance = 0.0;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="r">section index</param>
+/// <param name="typ"></param>
+/// <param name="doingBow"></param>
+/// <param name="bfind"></param>
+/// <param name="mtols"></param>
+/// <param name="ptols"></param>
+/// <returns></returns>
 bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, double* mtols, double* ptols)
 {
+	bugout(0, L"CalcAlign(): enterdd");
+
 	//CFitParams fp;
 	//fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
 	//fp.weightcurve[CVC] = 1;
@@ -284,7 +296,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	//}
 	try
 	{
-		//if (m_pBlade->m_section[bs]->FitPointV2(fp, m_pBestFitSection[r][bfind], inchSize(), mtols, ptols))
+		//if (m_pBlade->m_section[bs]->FitPoint(fp, m_pBestFitSection[r][bfind], inchSize(), mtols, ptols))
 			return true;
 	}
 	catch (...)
@@ -296,8 +308,16 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	return false;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="r">section index</param>
+/// <param name="xy"></param>
+/// <param name="doingBow"></param>
+/// <returns></returns>
 bool CAnalysis::Locate(int r, double* xy, int doingBow)
 {
+	bugout(0, L"Locate(): enterdd");
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 
 	for (int bfind = 0; bfind < MAXFITS; bfind++)
@@ -334,6 +354,10 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 		}
 		if (!thisFitUsed) // not used;
 			continue;
+		if (CalcAlign(r, m_pFlavor->m_fitType[bfind], doingBow, bfind, mtols, ptols))
+		{
+
+		}
 		//if (CalcAlign(r, m_pFlavor->m_fitType[bfind], doingBow, bfind, mtols, ptols))
 		//{
 		//	bugout(0, L"Locate: after CalcAlign, will cal GetBestFitV1");
@@ -356,6 +380,7 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 
 bool CAnalysis::FillCells()
 {
+	bugout(0,L"Fillcells(): enterdd");
 	m_refNomCentroid[0] = m_refNomCentroid[1] = m_refActCentroid[0] = m_refActCentroid[1] = -1.0e20;
 	m_good = true;
 	int i, j, bs;

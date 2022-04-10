@@ -2582,7 +2582,7 @@ std::pair<double, double> FitRangeToPoint(double termination1, double terminatio
 
 
 
-/*
+
 // This function returns a half-piece of a given section
 // You give it a pointer to a Section object, and you tell it CVC or CCC
 // and it gives you a CSubCurve for half the curve, first nominal and second measured
@@ -2676,7 +2676,7 @@ std::unique_ptr<CSubCurve> MakeMeasuredHalfCurve(const CSection *in_section, uns
   // build the subcurves
   return std::make_unique<CSubCurve>(in_section->MeaCurve(), meas_t_range.first, meas_t_range.second, period);
 }
- */
+ 
 
 // compute 2D angle between two vectors
 

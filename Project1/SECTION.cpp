@@ -246,7 +246,8 @@ void CSection::AddNomXYIJK(int i, double* xyijk)
     m_nomi[i] = xyijk[2];
     m_nomj[i] = xyijk[3];
     m_nomk[i] = xyijk[4];
-}double CSection::FindKValue(double* pt)
+}
+double CSection::FindKValue(double* pt)
 {
     if (m_numNomPoints < 1)
         return 0.0;
@@ -342,6 +343,24 @@ struct ChordInformation
 {
     Eigen::Vector2d leadingPoint, trailingPoint, leadingCenter, trailingCenter, leadingVector, trailingVector;
 };
+
+
+void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
+{
+    // const auto nominalSectionCurve = Hexagon::Blade::nominalSectionCurve(section);
+    const int leType = section->LEType();
+    const int teType = section->TEType();
+
+    typedef std::unique_ptr<const CSubCurve> PointerType;
+    //typedef std::vector<Hexagon::Blade::LinearDeviation> Deviations;
+   // typedef std::tuple<Eigen::VectorXd, Deviations, std::unique_ptr<const Hexagon::Blade::Curve<2>>> ReturnType;
+
+    // make some half curves, because we use them sometimes
+    //PointerType nominalConcaveHalfCurve = MakeNominalHalfCurve(section, CCC);
+    //PointerType nominalConvexHalfCurve = MakeNominalHalfCurve(section, CVC);
+    PointerType measuredConcaveHalfCurve = MakeMeasuredHalfCurve(section, CCC);
+    PointerType measuredConvexHalfCurve = MakeMeasuredHalfCurve(section, CVC);
+}
 /// <summary>
 /// 
 /// </summary>
@@ -377,6 +396,8 @@ bool CSection::FitPoints(int& index, double inchSize, double* mtols, double* pto
         Eigen::VectorXd::LinSpaced(numFineSamples + 1, NomCurve()->t0(), NomCurve()->t1()).head(numFineSamples);
     const Eigen::Matrix2Xd fineNominalPoints = Hexagon::Blade::evaluate(*NomCurve(), fineNominalTValues);
 
+
+    TestfigureOutWeightingAndEndpointConstraints(this);
     return true;
 }
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)
@@ -727,6 +748,34 @@ bool isWithinOrNear_periodic(double t, const Hexagon::Blade::Curve<2>& curve)
     return isNear_periodic(t, curve.t0(), curve.period()) || isNear_periodic(t, curve.t1(), curve.period()) ||
         Hexagon::Blade::tIsInSubcurve(t, curve, curve.period());
 }
+
+double computeCurveLineIntersectionT(const Hexagon::Blade::Curve<2>& curve,
+    const Eigen::Ref<const Eigen::Vector2d>& linePoint,
+    const Eigen::Ref<const Eigen::Vector2d>& lineDirection)
+{
+    const Eigen::Vector2d contiguousPoint = linePoint;
+    const Eigen::Vector2d contiguousDirection = lineDirection.normalized();
+
+    double intersectionT;
+    Eigen::Vector2d intersectionPoint;
+    if (!Hexagon::Blade::lineIntersection(curve, contiguousPoint.data(), contiguousDirection.data(),
+        intersectionPoint.data(), 0.0, 0.0, &intersectionT))
+    {
+        Hexagon::Blade::closestPoint(curve, contiguousPoint.data(), intersectionPoint.data(), &intersectionT);
+    }
+    return intersectionT;
+}
+
+double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d& bounds)
+{
+    const Eigen::Matrix2d endPoints = Hexagon::Blade::evaluate(curve, bounds);
+    const Eigen::Vector2d midPoint = endPoints.rowwise().mean();
+    const Eigen::Vector2d crossLineDirection =
+        (Hexagon::Blade::makeRotate90() * (endPoints.col(1) - endPoints.col(0))).normalized();
+    return computeCurveLineIntersectionT(curve, midPoint, crossLineDirection);
+}
+
+//»±…ŸBestFits.h
 //std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
 //    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
 //    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
@@ -743,3 +792,7 @@ bool isWithinOrNear_periodic(double t, const Hexagon::Blade::Curve<2>& curve)
 //    }
 //    return nullptr;
 //}
+// this function should only be called when the line only intersects the curve in one place
+
+
+

@@ -167,8 +167,8 @@ std::pair<double, double> FitRangeToPoint(double termination1, double terminatio
 // and it gives you a CSubCurve for half the curve, first nominal and second measured
 class CSubCurve;
 class CSection;
-//std::unique_ptr<CSubCurve> MakeNominalHalfCurve(const CSection *in_section, unsigned int which_piece);
-//std::unique_ptr<CSubCurve> MakeMeasuredHalfCurve(const CSection *in_section, unsigned int which_piece);
+std::unique_ptr<CSubCurve> MakeNominalHalfCurve(const CSection *in_section, unsigned int which_piece);
+std::unique_ptr<CSubCurve> MakeMeasuredHalfCurve(const CSection *in_section, unsigned int which_piece);
 
 
 //DLLEXPORT int RemoveLoops(int n, double *x, double *y, double *z, double *vi, double *vj);

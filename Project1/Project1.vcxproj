@@ -150,6 +150,7 @@
     <ClInclude Include="ANAFILE.h" />
     <ClInclude Include="Analysis.h" />
     <ClInclude Include="ArraySlicing.h" />
+    <ClInclude Include="BESTFIT.H" />
     <ClInclude Include="BladeError.h" />
     <ClInclude Include="CBLADE.h" />
     <ClInclude Include="CIRCLE.H" />
@@ -181,6 +182,7 @@
     <ClInclude Include="SUBCURVE.H" />
     <ClInclude Include="TemplateHermiteSpline.h" />
     <ClInclude Include="ToleranceSection.h" />
+    <ClInclude Include="VARTOL.H" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AbstractCurve.cpp" />
@@ -188,6 +190,7 @@
     <ClCompile Include="ALIGNMENT.CPP" />
     <ClCompile Include="ANAFILE.cpp" />
     <ClCompile Include="Analysis.cpp" />
+    <ClCompile Include="BESTFIT.CPP" />
     <ClCompile Include="BladeError.cpp" />
     <ClCompile Include="CBLADE.cpp" />
     <ClCompile Include="CIRCLE.CPP" />
@@ -217,6 +220,7 @@
     <ClCompile Include="StringUtil.cpp" />
     <ClCompile Include="SUBCURVE.CPP" />
     <ClCompile Include="ToleranceSection.cpp" />
+    <ClCompile Include="VARTOL.CPP" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

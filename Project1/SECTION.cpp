@@ -397,7 +397,7 @@ bool CSection::FitPoints(int& index, double inchSize, double* mtols, double* pto
     const Eigen::Matrix2Xd fineNominalPoints = Hexagon::Blade::evaluate(*NomCurve(), fineNominalTValues);
 
 
-    TestfigureOutWeightingAndEndpointConstraints(this);
+    TestfigureOutWeightingAndEndpointConstraints(this);//≤‚ ‘figureOutWeightingAndEndpointConstraints
     return true;
 }
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)

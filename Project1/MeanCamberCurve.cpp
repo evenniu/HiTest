@@ -569,12 +569,11 @@ MeanCamberResult createMeanCamberCurveOldMeasured(const MeanCamberCurveParameter
   double mtle = params.mtle;
   double mtte = params.mtte;
   auto section = params.section;
-  CCurve* whole = NULL;
-  //CCurve *whole = section->MeaCurve();
-  //CCurve *lec = section->MeaPart(LEC);
-  //CCurve *tec = section->MeaPart(TEC);
-  //CCurve *cvc = section->MeaPart(CVC);
-  //CCurve *ccc = section->MeaPart(CCC);
+  CCurve *whole = section->MeaCurve();
+  CCurve *lec = section->MeaPart(LEC);
+  CCurve *tec = section->MeaPart(TEC);
+  CCurve *cvc = section->MeaPart(CVC);
+  CCurve *ccc = section->MeaPart(CCC);
   CCurve *mcc = nullptr;
   bool skipPitch = false;
 
@@ -587,48 +586,48 @@ MeanCamberResult createMeanCamberCurveOldMeasured(const MeanCamberCurveParameter
 
   if (letype != EDGE_NORMAL || tetype != EDGE_NORMAL)
   {
-  //  double xyz[3], rim[3];
-  //  CCurve *uselec = section->MeaPart(LEC);
-  //  if (letype == EDGE_SQUARE)
-  //  {
-  //    xyz[0] = params.analysisSection->m_nose[0];  //changed how square ends are handled, trying to use the old way
-  //    xyz[1] = params.analysisSection->m_nose[1];
-  //    xyz[2] = 0.0;
-  //    rim[0] = xyz[0] + 1.0;
-  //    rim[1] = xyz[1];
-  //    uselec = new CCircle(xyz, rim, rim, 1.0);
-  //    //bugout(0, _T("10 %f %f LE"), xyz[0], xyz[1]);
-  //  }
-  //  else if (letype == EDGE_PARTIAL)
-  //    uselec = 0;
+    double xyz[3], rim[3];
+    CCurve *uselec = section->MeaPart(LEC);
+    if (letype == EDGE_SQUARE)
+    {
+      xyz[0] = params.analysisSection->m_nose[0];  //changed how square ends are handled, trying to use the old way
+      xyz[1] = params.analysisSection->m_nose[1];
+      xyz[2] = 0.0;
+      rim[0] = xyz[0] + 1.0;
+      rim[1] = xyz[1];
+      uselec = new CCircle(xyz, rim, rim, 1.0);
+      //bugout(0, _T("10 %f %f LE"), xyz[0], xyz[1]);
+    }
+    else if (letype == EDGE_PARTIAL)
+      uselec = 0;
 
-  //  CCurve *usetec = tec;
-  //  if (tetype == EDGE_SQUARE)
-  //  {
-  //    xyz[0] = params.analysisSection->m_tail[0];  //changed how square ends are handled, trying to use the old way
-  //    xyz[1] = params.analysisSection->m_tail[1];
-  //    xyz[2] = 0.0;
-  //    rim[0] = xyz[0] + 1.0;
-  //    rim[1] = xyz[1];
-  //    usetec = new CCircle(xyz, rim, rim, 1.0);
-  //    //bugout(0, _T("10 %f %f TE"), xyz[0], xyz[1]);
-  //  }
-  //  else if (tetype == EDGE_PARTIAL)
-  //    usetec = 0;
+    CCurve *usetec = tec;
+    if (tetype == EDGE_SQUARE)
+    {
+      xyz[0] = params.analysisSection->m_tail[0];  //changed how square ends are handled, trying to use the old way
+      xyz[1] = params.analysisSection->m_tail[1];
+      xyz[2] = 0.0;
+      rim[0] = xyz[0] + 1.0;
+      rim[1] = xyz[1];
+      usetec = new CCircle(xyz, rim, rim, 1.0);
+      //bugout(0, _T("10 %f %f TE"), xyz[0], xyz[1]);
+    }
+    else if (tetype == EDGE_PARTIAL)
+      usetec = 0;
 
-  //  int numMeaMCLPoints = myGetProfileInt(L"MeasuredMCLPoints", 75);
+    int numMeaMCLPoints = 75;//myGetProfileInt(L"MeasuredMCLPoints", 75);
 
   //  // If both ends are partial, CNurbCurve will need help deciding which end is LE.  The start of the nominal MCL is passed in to be used when needed
-  //  double nomStart[2];
-  //  params.section->NomPart(MCC)->CalcPoint(nomStart, section->NomPart(MCC)->T0());
+    double nomStart[2];
+    //params.section->NomPart(MCC)->CalcPoint(nomStart, section->NomPart(MCC)->T0());
 
-   // mcc = new CNurbCurve(numMeaMCLPoints, ccc, cvc, uselec, usetec, 3, nomStart);
+    mcc = new CNurbCurve(numMeaMCLPoints, ccc, cvc, uselec, usetec, 3, nomStart);
 
-  /*  if (usetec && usetec != tec)
+    if (usetec && usetec != tec)
       delete usetec;
 
     if (uselec && uselec != lec)
-      delete uselec;*/
+      delete uselec;
   }
   else
   {
@@ -653,27 +652,24 @@ MeanCamberResult createMeanCamberCurveOldMeasured(const MeanCamberCurveParameter
 
 MeanCamberResult createMeasuredMeanCamberCurve(const MeanCamberCurveParameters& params, bool isEnglish)
 {
-    MeanCamberResult result;
-    result.skipPitch = false;
-    return result;
   // check sanity; the sections are supposed to all be the same section
-  //std::wstring sectionName = params.section->m_name;
-  //std::wstring analysisName = params.analysisSection->m_sectName;
+  std::wstring sectionName = params.section->m_name;
+  std::wstring analysisName = params.analysisSection->m_sectName;
   //alwaysAssert(sectionName == analysisName);
 
-  //if(params.section->nominalMCLParams)
-  //{
-  //  MeanCamberResult result;
-  //  result.meanCamberCurve =
-  //      createMeasuredMeanCamberCurve2016(params.section->MeaCurve(), params.section->MeaPart(LEC),
-  //                                        params.section->MeaPart(TEC), params.section->nominalMCLParams, isEnglish);
-  //  result.skipPitch = false;
-  //  return result;
-  //}
-  //else
-  //{
-  //  return createMeanCamberCurveOldMeasured(params);
-  //}
+  if(params.section->nominalMCLParams)
+  {
+    MeanCamberResult result;
+    result.meanCamberCurve =
+        createMeasuredMeanCamberCurve2016(params.section->MeaCurve(), params.section->MeaPart(LEC),
+                                          params.section->MeaPart(TEC), params.section->nominalMCLParams, isEnglish);
+    result.skipPitch = false;
+    return result;
+  }
+  else
+  {
+    return createMeanCamberCurveOldMeasured(params);
+  }
 }
 }
 }

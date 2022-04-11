@@ -16,20 +16,20 @@ namespace Hexagon
 {
 namespace Blade
 {
-//SectionCurve nominalSectionCurve(const CSection *section)
-//{
-//  SectionCurve answer;
-// //answer.whole = section->NomCurve();
-//  //answer.leading = section->NomPart(LEC);
-//  //answer.trailing = section->NomPart(TEC);
-//  //answer.concave = section->NomPart(CCC);
-//  //answer.convex = section->NomPart(CVC);
-//  //answer.meanCamber = section->NomPart(MCC);
-//  //answer.leType = section->LEType();
-//  //answer.teType = section->TEType();
-//  return answer;
-//}
-//
+SectionCurve nominalSectionCurve(const CSection *section)
+{
+  SectionCurve answer;
+ answer.whole = section->NomCurve();
+  answer.leading = section->NomPart(LEC);
+  answer.trailing = section->NomPart(TEC);
+  answer.concave = section->NomPart(CCC);
+  answer.convex = section->NomPart(CVC);
+  answer.meanCamber = section->NomPart(MCC);
+  answer.leType = section->LEType();
+  answer.teType = section->TEType();
+  return answer;
+}
+
 SectionCurve measuredSectionCurve(const CSection* section)
 {
   SectionCurve answer;

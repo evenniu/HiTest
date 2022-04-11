@@ -20,7 +20,7 @@ struct SectionCurve
   int leType, teType;
 };
 
-//SectionCurve nominalSectionCurve(const CSection* section);
+SectionCurve nominalSectionCurve(const CSection* section);
 //
 SectionCurve measuredSectionCurve(const CSection* section);
 

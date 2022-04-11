@@ -4,6 +4,9 @@
 #else // !defined (BLADEMATH_EXPORTS)
 #define DLLEXPORT __declspec(dllimport)
 #endif
+
+#include "BestFit.h"
+
 namespace Hexagon
 {
 	namespace Blade
@@ -269,6 +272,6 @@ public:
 	bool AssignPoints(double* xv, double* yv, int n, int* start, int* end);
 	int Chord(int flg, double* lcp, double* tcp, double* lctr, double* tctr, double* ltv, double* ttv, double* m = 0,
 		double* w = 0, double* tew = 0, double* zeroPt = 0);
-	bool FitPoints(int& index, double inchSize, double* mtols = NULL, double* ptols = NULL);
+	bool FitPoints(CFitParams& fp, int& index, double inchSize, double* mtols = NULL, double* ptols = NULL);
 
 };

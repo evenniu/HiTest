@@ -30,19 +30,19 @@ namespace Blade
 //  return answer;
 //}
 //
-//SectionCurve measuredSectionCurve(const CSection* section)
-//{
-//  //SectionCurve answer;
-//  //answer.whole = section->MeaCurve();
-//  //answer.leading = section->MeaPart(LEC);
-// // answer.trailing = section->MeaPart(TEC);
-//  //answer.concave = section->MeaPart(CCC);
-//  //answer.convex = section->MeaPart(CVC);
-//  //answer.meanCamber = section->MeaPart(MCC);
-//  //answer.leType = section->LEType();
-//  //answer.teType = section->TEType();
-//  //return answer;
-//}
+SectionCurve measuredSectionCurve(const CSection* section)
+{
+  SectionCurve answer;
+  answer.whole = section->MeaCurve();
+  answer.leading = section->MeaPart(LEC);
+  answer.trailing = section->MeaPart(TEC);
+  answer.concave = section->MeaPart(CCC);
+  answer.convex = section->MeaPart(CVC);
+  answer.meanCamber = section->MeaPart(MCC);
+  answer.leType = section->LEType();
+  answer.teType = section->TEType();
+  return answer;
+}
 
 Eigen::Vector2d gravityGuess(const SectionCurve& curve)
 {

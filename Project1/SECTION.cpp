@@ -344,7 +344,141 @@ struct ChordInformation
     Eigen::Vector2d leadingPoint, trailingPoint, leadingCenter, trailingCenter, leadingVector, trailingVector;
 };
 
+Eigen::Isometry2d TestcreateGuessTransform(const CFitParams& fp, const ChordInformation& targetChord,
+    const ChordInformation& fittedChord,
+    
+    const Hexagon::Blade::SectionCurve& fittedCurves, const int leType,
+    const int teType)
+{
+    const double targetChordLength = (targetChord.leadingPoint - targetChord.trailingPoint).norm();
+    const double r = 0.75 * targetChordLength;
+    Eigen::Vector2d targetPoint, fittedPoint;
+    bugout(0, L"createGuessTransform:pivot(%d) tranfit(%d) entered ****", fp.pivot, fp.tranfit);
+    if (fp.pivot == 0 && fp.tranfit == 3) // le center
+    {
+       // targetCurves.meanCamber->CircIntersect(targetChord.leadingPoint.data(), r, targetPoint.data());
+        fittedCurves.meanCamber->CircIntersect(fittedChord.leadingPoint.data(), r, fittedPoint.data());
+ /*       return Hexagon::Blade::twoPointBestFit(targetChord.leadingCenter, targetPoint, fittedChord.leadingCenter,
+            fittedPoint);*/
+    }
+    //else if (fp.pivot == 1 && fp.tranfit == 3) // le nose
+    //{
+    //    targetCurves.meanCamber->CircIntersect(targetChord.leadingPoint.data(), r, targetPoint.data());
+    //    fittedCurves.meanCamber->CircIntersect(fittedChord.leadingPoint.data(), r, fittedPoint.data());
+    //    return Hexagon::Blade::twoPointBestFit(targetChord.leadingPoint, targetPoint, fittedChord.leadingPoint,
+    //        fittedPoint);
+    //}
+    //else if (fp.pivot == 2 && fp.tranfit == 3) // te center
+    //{
+    //    targetCurves.meanCamber->CircIntersect(targetChord.trailingPoint.data(), r, targetPoint.data());
+    //    fittedCurves.meanCamber->CircIntersect(fittedChord.trailingPoint.data(), r, fittedPoint.data());
+    //    return Hexagon::Blade::twoPointBestFit(targetChord.trailingCenter, targetPoint, fittedChord.trailingCenter,
+    //        fittedPoint);
+    //}
+    //else if (fp.pivot == 3 && fp.tranfit == 3) // te tail
+    //{
+    //    targetCurves.meanCamber->CircIntersect(targetChord.trailingPoint.data(), r, targetPoint.data());
+    //    fittedCurves.meanCamber->CircIntersect(fittedChord.trailingPoint.data(), r, fittedPoint.data());
+    //    return Hexagon::Blade::twoPointBestFit(targetChord.trailingPoint, targetPoint, fittedChord.trailingPoint,
+    //        fittedPoint);
+    //}
+    //else if (fp.fitcurve[LEC] == 1 && fp.fitcurve[TEC] == 0)
+    //{
+    //    // LE and no TE: let's start with nose points aligned
+    //    if (leType == EDGE_NORMAL || leType == EDGE_SQUARE)
+    //    {
+    //        targetCurves.whole->CircIntersect(targetChord.leadingPoint.data(), r, targetPoint.data());
+    //        fittedCurves.whole->CircIntersect(fittedChord.leadingPoint.data(), r, fittedPoint.data());
+    //        return Hexagon::Blade::twoPointBestFit(targetChord.leadingPoint, targetPoint, fittedChord.leadingPoint,
+    //            fittedPoint);
+    //    }
+    //    else // partial edge
+    //    {
+    //        Eigen::Vector2d target0, target1, fitted0, fitted1;
+    //        targetCurves.leading->CalcPoint(target0.data(), targetCurves.leading->T0());
+    //        targetCurves.leading->CalcPoint(target1.data(), targetCurves.leading->T1());
+    //        fittedCurves.leading->CalcPoint(fitted0.data(), fittedCurves.leading->T0());
+    //        fittedCurves.leading->CalcPoint(fitted1.data(), fittedCurves.leading->T1());
+    //        return Hexagon::Blade::twoPointBestFit(target0, target1, fitted0, fitted1);
+    //    }
+    //}
+    //else if (fp.fitcurve[LEC] == 0 && fp.fitcurve[TEC] == 1)
+    //{
+    //    // TE and no LE: let's start with tail points aligned
+    //    if (teType == EDGE_NORMAL || teType == EDGE_SQUARE)
+    //    {
+    //        targetCurves.meanCamber->CircIntersect(targetChord.trailingPoint.data(), r, targetPoint.data());
+    //        fittedCurves.meanCamber->CircIntersect(fittedChord.trailingPoint.data(), r, fittedPoint.data());
+    //        return Hexagon::Blade::twoPointBestFit(targetChord.trailingPoint, targetPoint, fittedChord.trailingPoint,
+    //            fittedPoint);
+    //    }
+    //    else // partial edge
+    //    {
+    //        Eigen::Vector2d target0, target1, fitted0, fitted1;
+    //        targetCurves.trailing->CalcPoint(target0.data(), targetCurves.trailing->T0());
+    //        targetCurves.trailing->CalcPoint(target1.data(), targetCurves.trailing->T1());
+    //        fittedCurves.trailing->CalcPoint(fitted0.data(), fittedCurves.trailing->T0());
+    //        fittedCurves.trailing->CalcPoint(fitted1.data(), fittedCurves.trailing->T1());
+    //        return Hexagon::Blade::twoPointBestFit(target0, target1, fitted0, fitted1);
+    //    }
+    //}
+    //else if (fp.fitcurve[LEC] == 1 && fp.fitcurve[TEC] == 1 && leType == EDGE_PARTIAL)
+    //{
+    //    targetCurves.meanCamber->CircIntersect(targetChord.trailingPoint.data(), r, targetPoint.data());
+    //    fittedCurves.meanCamber->CircIntersect(fittedChord.trailingPoint.data(), r, fittedPoint.data());
+    //    return Hexagon::Blade::twoPointBestFit(targetChord.trailingPoint, targetPoint, fittedChord.trailingPoint,
+    //        fittedPoint);
+    //}
+    //else if (fp.fitcurve[LEC] == 1 && fp.fitcurve[TEC] == 1 && teType == EDGE_PARTIAL)
+    //{
+    //    targetCurves.meanCamber->CircIntersect(targetChord.leadingPoint.data(), r, targetPoint.data());
+    //    fittedCurves.meanCamber->CircIntersect(fittedChord.leadingPoint.data(), r, fittedPoint.data());
+    //    return Hexagon::Blade::twoPointBestFit(targetChord.leadingPoint, targetPoint, fittedChord.leadingPoint,
+    //        fittedPoint);
+    //}
+    //else if (fp.fitcurve[CCC] == 1 && fp.fitcurve[CVC] == 0 && fp.fitcurve[LEC] == 0 && fp.fitcurve[TEC] == 0)
+    //{
+    //    // fit only the CCC curve; start computing the endpoints
+    //    const Eigen::Vector2d target0 = Hexagon::Blade::evaluate(*targetCurves.concave, targetCurves.concave->t0());
+    //    const Eigen::Vector2d target1 = Hexagon::Blade::evaluate(*targetCurves.concave, targetCurves.concave->t1());
+    //    const Eigen::Vector2d fitted0 = Hexagon::Blade::evaluate(*fittedCurves.concave, fittedCurves.concave->t0());
+    //    const Eigen::Vector2d fitted1 = Hexagon::Blade::evaluate(*fittedCurves.concave, fittedCurves.concave->t1());
 
+    //    // find the midpoints and direction vectors
+    //    const Eigen::Vector2d midTarget = 0.5 * (target0 + target1);
+    //    const Eigen::Vector2d midFitted = 0.5 * (fitted0 + fitted1);
+    //    const Eigen::Vector2d diffTarget = target0 - target1;
+    //    const Eigen::Vector2d diffFitted = fitted0 - fitted1;
+    //    const Eigen::Vector2d midDirectionTarget = midTarget + diffTarget;
+    //    const Eigen::Vector2d midDirectionFitted = midFitted + diffFitted;
+
+    //    // return the two-point fit
+    //    return Hexagon::Blade::twoPointBestFit(midTarget, midDirectionTarget, midFitted, midDirectionFitted);
+    //}
+    //else if (fp.fitcurve[CVC] == 1 && fp.fitcurve[CCC] == 0 && fp.fitcurve[LEC] == 0 && fp.fitcurve[TEC] == 0)
+    //{
+    //    // fit only the CCC curve; start computing the endpoints
+    //    const Eigen::Vector2d target0 = Hexagon::Blade::evaluate(*targetCurves.convex, targetCurves.convex->t0());
+    //    const Eigen::Vector2d target1 = Hexagon::Blade::evaluate(*targetCurves.convex, targetCurves.convex->t1());
+    //    const Eigen::Vector2d fitted0 = Hexagon::Blade::evaluate(*fittedCurves.convex, fittedCurves.convex->t0());
+    //    const Eigen::Vector2d fitted1 = Hexagon::Blade::evaluate(*fittedCurves.convex, fittedCurves.convex->t1());
+
+    //    // find the midpoints and direction vectors
+    //    const Eigen::Vector2d midTarget = 0.5 * (target0 + target1);
+    //    const Eigen::Vector2d midFitted = 0.5 * (fitted0 + fitted1);
+    //    const Eigen::Vector2d diffTarget = target0 - target1;
+    //    const Eigen::Vector2d diffFitted = fitted0 - fitted1;
+    //    const Eigen::Vector2d midDirectionTarget = midTarget + diffTarget;
+    //    const Eigen::Vector2d midDirectionFitted = midFitted + diffFitted;
+
+    //    // return the two-point fit
+    //    return Hexagon::Blade::twoPointBestFit(midTarget, midDirectionTarget, midFitted, midDirectionFitted);
+    //}
+
+    // no special guess
+    return Eigen::Isometry2d::Identity();
+
+}
 void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
 {
     // const auto nominalSectionCurve = Hexagon::Blade::nominalSectionCurve(section);
@@ -369,11 +503,18 @@ void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
 /// <param name="mtols"></param>
 /// <param name="ptols"></param>
 /// <returns></returns>
-bool CSection::FitPoints(int& index, double inchSize, double* mtols, double* ptols)
+bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mtols, double* ptols)
 {
-   // const auto sectionCurve = Hexagon::Blade::nominalSectionCurve(this);
+   // const auto sectionCurve = 0;// Hexagon::Blade::nominalSectionCurve(this);
     const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(m_mxpt, m_mypt, m_totalPoints);
     bugout(0, L"FitPoints:m_totalPoints(%d) entered ****", m_totalPoints);
+    //for (const auto side : { LEC, TEC })
+    //{
+    //    if (fp.weightcurve[side] == 0)
+    //    {
+    //        fp.fitcurve[side] = 0;
+    //    }
+    //}
     const Eigen::Map<const Eigen::ArrayXi> partOf(m_partOf, m_totalPoints);
     ChordInformation nominalChordInfo;
     if (!Chord(0, nominalChordInfo.leadingPoint.data(), nominalChordInfo.trailingPoint.data(),
@@ -389,6 +530,11 @@ bool CSection::FitPoints(int& index, double inchSize, double* mtols, double* pto
     {
         //return false;//¡Ÿ ±◊¢ ÕµÙ
     }
+    // create an initial guess
+    const Eigen::Isometry2d guessTransform =
+        TestcreateGuessTransform(fp, nominalChordInfo, measuredChordInfo,
+            Hexagon::Blade::measuredSectionCurve(this), LEType(), TEType());
+    //Hexagon::Blade::FitOptions options;
 
     // construct inner and outer tolerance curves if applicable
     const ptrdiff_t numFineSamples = 16384;

@@ -22,7 +22,7 @@ struct SectionCurve
 
 //SectionCurve nominalSectionCurve(const CSection* section);
 //
-//SectionCurve measuredSectionCurve(const CSection* section);
+SectionCurve measuredSectionCurve(const CSection* section);
 
 Eigen::Vector2d gravityGuess(const SectionCurve& curve);
 

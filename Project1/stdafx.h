@@ -12,7 +12,7 @@ using namespace std;
 #include "MATHUTIL.h"
 #include "CURVE.H"
 #include "CONSTANTS.H"
-//#include "BESTFIT.H"
+#include "BESTFIT.H"
 #include "SECTION.H"
 #include "BladeError.h"
 #include "CBLADE.H"

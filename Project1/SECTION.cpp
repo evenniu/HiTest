@@ -542,8 +542,28 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
         Eigen::VectorXd::LinSpaced(numFineSamples + 1, NomCurve()->t0(), NomCurve()->t1()).head(numFineSamples);
     const Eigen::Matrix2Xd fineNominalPoints = Hexagon::Blade::evaluate(*NomCurve(), fineNominalTValues);
 
-
+    std::unique_ptr<const Hexagon::Blade::Curve<2>> reducedCurveToFit;
     TestfigureOutWeightingAndEndpointConstraints(this);//≤‚ ‘figureOutWeightingAndEndpointConstraints
+    const Hexagon::Blade::Curve<2>* curveToFit = NomCurve();
+    if (reducedCurveToFit)//always empty
+    {
+        curveToFit = reducedCurveToFit.get();
+    }
+    const Eigen::VectorXd distancesToPivot =
+        (measuredPoints).colwise().norm().transpose();
+    //const double scale = (weightFittedPoints.array() > 0.0).select(distancesToPivot, 0.0).maxCoeff();
+    const double scale = 1000;
+  /*  options.translationXLimits = Eigen::Vector2d(-scale, scale);
+    options.translationYLimits = Eigen::Vector2d(-scale, scale);*/
+
+    // set the rotation and translation options
+    //setRotationOptions(options, fp);
+    //setTranslationOptions(options, fp, nominalChordInfo, measuredChordInfo);
+    if (fp.algorithm == BestFitAlgorithm::LeastSquares)
+    {
+        //auto fitTransform = Hexagon::Blade::computeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options,
+        //    linearDeviations1, inchSize);
+    }
     return true;
 }
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)

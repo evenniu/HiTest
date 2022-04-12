@@ -171,6 +171,7 @@
     <ClInclude Include="MATRIX.H" />
     <ClInclude Include="MeanCamberCurve.h" />
     <ClInclude Include="MINSTOCK.H" />
+    <ClInclude Include="Nominal.h" />
     <ClInclude Include="NominalFile.h" />
     <ClInclude Include="NOMINALSECTION.H" />
     <ClInclude Include="NURB.H" />
@@ -211,6 +212,7 @@
     <ClCompile Include="MATRIX.CPP" />
     <ClCompile Include="MeanCamberCurve.cpp" />
     <ClCompile Include="MINSTOCK.CPP" />
+    <ClCompile Include="Nominal.cpp" />
     <ClCompile Include="NominalFile.cpp" />
     <ClCompile Include="NOMINALSECTION.CPP" />
     <ClCompile Include="NURB.CPP" />

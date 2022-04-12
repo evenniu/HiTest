@@ -5,6 +5,11 @@
 #define DLLEXPORT __declspec(dllimport)
 #endif
 
+
+#include "NominalSection.h"
+#include "Nominal.h"
+
+
 class DLLEXPORT CNominalFile
 {
 private:
@@ -15,7 +20,7 @@ private:
 public:
 	CNominalFile(wchar_t* nominalFile, wchar_t* rptPath, wchar_t* mathFile, HWND statusHWDN, wchar_t* processNomSection, bool isCreating);
 	virtual ~CNominalFile();
-	//CNominal* m_nom;
+	CNominal* m_nom;
 
 	bool m_isCreating;  // used when file is edited or created, to know whether to display file missing error
 	int m_errorCode;

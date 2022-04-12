@@ -7,8 +7,8 @@
 #include <share.h>
 #include <fcntl.h>
 #include "HermiteCurve.h"
-//#include "MeanCamberCurve.h"
-#include "BestFits.h"
+#include "MeanCamberCurve.h"
+//#include "BestFits.h"
 #include "SectionCurve.h"
 #include "ArraySlicing.h"
 #include "EigenAbstractCurve.h"
@@ -30,7 +30,7 @@ CBlade::CBlade()
     m_numSections = 0;
     //m_pBestFit = NULL;
     //m_pBestFitLE = NULL;
-    //m_section = NULL;
+    m_section = NULL;
 }
 CBlade::CBlade(wchar_t* mathFileName)
 {
@@ -39,7 +39,7 @@ CBlade::CBlade(wchar_t* mathFileName)
     m_numSections = 0;
     //m_pBestFit = NULL;
     //m_pBestFitLE = NULL;
-    //m_section = NULL;
+    m_section = NULL;
     wcscpy_s(m_mathFileName, mathFileName);
 
     FILE* fp;
@@ -55,12 +55,12 @@ CBlade::CBlade(wchar_t* mathFileName)
 }
 CBlade::~CBlade()
 {
-    //if (m_section)
-    //{
-    //    for (int i = 0; i < m_numSections; i++)
-    //        delete m_section[i];
-    //    delete[]m_section;
-    //}
+    if (m_section)
+    {
+        for (int i = 0; i < m_numSections; i++)
+            delete m_section[i];
+        delete[]m_section;
+    }
 
     //if (m_pBestFit)
     //    delete m_pBestFit;
@@ -112,6 +112,8 @@ CCurve* readCurve(FILE* fp, const bool isEnglish)
 }
 bool CBlade::ReadFile(FILE* fp)
 {
+    short ft;
+    fread(&ft, sizeof(short), 1, fp);
     fread(&m_numSections, sizeof(short), 1, fp);
     fread(&m_english, sizeof(bool), 1, fp);
     m_numSections = 1;
@@ -125,6 +127,48 @@ bool CBlade::ReadFile(FILE* fp)
         double d;
         fread(&d, sizeof(double), 1, fp);
         m_section[i]->ZValue(d);
+
+        fread(tbuf, 1, 24, fp);
+        wcscpy_s(tbuf, MAXBUFSZ, L"A-A");//由于math文件空，测试时时防止出现错误暂赋初值
+        m_section[i]->Name(tbuf);
+        bugout(0, L"CBlade::ReadFile name %s", tbuf);
+
+        short s=0;
+        fread(&s, sizeof(short), 1, fp);
+        m_section[i]->LEType(s);
+        //bugout(0, L"letype %d", s);
+
+        fread(&s, sizeof(short), 1, fp);
+        m_section[i]->TEType(s);
+        //bugout(0, L"tetype %d", s);
+
+        short skewed;
+        fread(&skewed, sizeof(short), 1, fp);
+             
+        if (skewed)
+        {
+            double zaxis[3], origin[3];
+
+            if (!fread(zaxis, sizeof(double), 3, fp))
+                break;
+            if (!fread(origin, sizeof(double), 3, fp))
+                break;
+
+            CAlignment* align = new CAlignment(3);
+            align->MatrixFromAxis(zaxis);
+            align->m_morig[0] = origin[0];
+            align->m_morig[1] = origin[1];
+            align->m_morig[2] = origin[2];
+            align->m_borig[0] = origin[0];
+            align->m_borig[1] = origin[1];
+            align->m_borig[2] = origin[2];
+            //m_section[i]->SkewAlign(align);
+
+            if (skewed > 9)
+                m_section[i]->m_skewReport = 1;
+        }
+    
+    
     }
     return true;
 }

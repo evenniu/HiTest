@@ -556,7 +556,7 @@ void CNurbCurve::MeanCamber(int n, CCurve *ccc, CCurve *cvc, CCurve *lec, CCurve
 {
   n = n - 40;
 
-  //bugout(0, _T("START MeanCamber n=%d"), n);
+  bugout(0, L"START MeanCamber n=%d", n);
   int i, ng, nle = 0,nte = 0;
   double ts,te,td,p1[3],p2[3];
   double lex[20],ley[20],tex[20],tey[20];
@@ -1049,8 +1049,8 @@ CNurbCurve::CNurbCurve(int n, double lextr, double textr, double ler, double ter
   CSubCurve *ccc = new CSubCurve(whole, t[1], t[2], period);
   CSubCurve *tec = new CSubCurve(whole, t[2], t[3], period);
   CSubCurve *cvc = new CSubCurve(whole, t[3], t[0] + period, period);
-
-  MeanCamber(n, ccc, cvc, lec, tec, useextremes);
+  bugout(0, L"New CNurbCurve N=%d, cal MeanCamber***",n);
+  //MeanCamber(n, ccc, cvc, lec, tec, useextremes);//会出现问题 先临时注释
 
   delete lec;
   delete ccc;

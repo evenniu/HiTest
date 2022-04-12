@@ -138,6 +138,12 @@
     <ClInclude Include="Nominal.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="SVD.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PLANE.H">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FUNClass.cpp">
@@ -252,6 +258,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Nominal.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SVD.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PLANE.CPP">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

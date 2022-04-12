@@ -1,7 +1,10 @@
 #include "stdafx.h"
-#include <fstream>
-//#include "Plane.h"
 #include "NominalFile.h"
+
+#include <fstream>
+#include "Plane.h"
+#include "MeanCamberCurve.h"
+
 #include <string>
 
 CNominalFile::CNominalFile(wchar_t* nominalFile, wchar_t* rptPath, wchar_t* mathFile, HWND statusHWND, wchar_t* processNomSection, bool isCreating)
@@ -393,7 +396,7 @@ bool CNominalFile::Translate(int* firstWarning)
 			if (m_nom->m_sections[s]->m_skewed && !m_readonly)
 			{
 				double pnt[3], vec[3];
-				//calc_plane(m_nom->m_sections[s]->m_npts, planePts.m, pnt, vec);
+				calc_plane(m_nom->m_sections[s]->m_npts, planePts.m, pnt, vec);
 
 				if (fabs(vec[2]) > 1.0e-6)
 				{
@@ -401,7 +404,36 @@ bool CNominalFile::Translate(int* firstWarning)
 					pnt[0] = pnt[1] = 0.0;
 					pnt[2] = zprime;
 				}
+				m_nom->m_sections[s]->ApplySkew(vec, pnt);
+
+			}// build up the input data-structure for the 2016 mean camber line algorithm
+			auto mclParams = computeMCLParams(s, val);
+			bugout(0, L"Translate: loff=%lf, toff=%lf", loff, toff);
+			bool vecWarn = false;
+			int rv;
+			m_errorCode = NS_OK;
+			if (m_nom->m_sections[s]->m_noseindex[1] >= 0 || m_nom->m_sections[s]->m_tailindex[1] >= 0)
+				rv = m_nom->m_sections[s]->Calculate(val.m, m_nom->m_sections[s]->m_noseindex[0],
+					m_nom->m_sections[s]->m_noseindex[1], m_nom->m_sections[s]->m_tailindex[0],
+					m_nom->m_sections[s]->m_tailindex[1], m_nom->m_sections[s]->m_letype,
+					m_nom->m_sections[s]->m_tetype, &loff, &toff, useextr, mclParams.get());
+			else
+				rv = m_nom->m_sections[s]->Calculate(val.m, m_nom->m_sections[s]->m_noseindex[0] >= 0 ? nose[0] : 0,
+					m_nom->m_sections[s]->m_tailindex[0] >= 0 ? tail[0] : 0, &loff, &toff,
+					useextr, &vecWarn, mclParams.get());
+			if (!rv)
+			{
+				m_errorCode = m_nom->m_sections[s]->m_errorCode;
+
+				ErrorStruct es(BE_NOCALCSECTIONNOM, m_nom->m_sections[s]->m_name);
+				//m_error->AddError(&es);
+				return false;
+			} if (vecWarn)
+			{
+				if (*firstWarning < 0)
+					*firstWarning = s;
 			}
+			bugout(0, L"Translate:s=%d m_npts:%d", s, m_nom->m_sections[s]->m_npts);
 		}//for (s = 0; s < m_nom->m_numSect; s++)
 		for (s = 0; s < m_nom->m_numSect; s++)
 		{
@@ -409,4 +441,123 @@ bool CNominalFile::Translate(int* firstWarning)
 		}
 	}
 	return false;
+}
+
+void computeEdge(int edgeType, int index0, int index1, const CMatrix& val, int numberOfPoints,
+	Eigen::Ref<Eigen::Vector2d> outEdgePoint, Eigen::Ref<Eigen::Vector2d> outEdgeNormal)
+{
+	switch (edgeType)
+	{
+	case EDGE_NORMAL:
+	{
+		//alwaysAssert(index0 >= 0);
+		//alwaysAssert(index1 == -1);
+		outEdgePoint = Eigen::Vector2d(val.m[index0][0], val.m[index0][1]);
+		outEdgeNormal = Eigen::Vector2d(val.m[index0][3], val.m[index0][4]);
+		outEdgeNormal.normalize();
+		return;
+	}
+	case EDGE_SQUARE:
+	{
+		//alwaysAssert(index0 >= 0);
+		//alwaysAssert(index1 >= 0);
+		int edgeIndex;
+		if (abs(index0 - index1) < (numberOfPoints / 2))
+		{
+			edgeIndex = (index0 + index1) / 2;
+		}
+		else
+		{
+			edgeIndex = ((index0 + index1 + numberOfPoints) / 2) % numberOfPoints;
+		}
+		outEdgePoint = Eigen::Vector2d(val.m[edgeIndex][0], val.m[edgeIndex][1]);
+		outEdgeNormal = Eigen::Vector2d(val.m[edgeIndex][3], val.m[edgeIndex][4]);
+		outEdgeNormal.normalize();
+		return;
+	}
+	case EDGE_PARTIAL:
+	{
+		//alwaysAssert(index0 >= 0);
+		//alwaysAssert(index1 >= 0);
+		Eigen::Vector2d point0(val.m[index0][0], val.m[index0][1]);
+		Eigen::Vector2d point1(val.m[index1][0], val.m[index1][1]);
+		outEdgePoint = 0.5 * point0 + 0.5 * point1;
+		Eigen::Vector2d difference = point0 - point1;
+		outEdgeNormal[0] = difference[1];
+		outEdgeNormal[1] = -difference[0];
+		outEdgeNormal.normalize();
+		return;
+	}
+	default:
+		throw std::logic_error("Unknown edge type: neither normal, SQUARE, nor PARTIAL");
+	}
+}
+
+
+std::shared_ptr<Hexagon::Blade::MeanCamberCurveParameters2016> CNominalFile::computeMCLParams(int s,const CMatrix& val) const
+{
+	//return nullptr;
+	/*if (m_ptol == nullptr)
+	{
+		return nullptr;
+	}
+	int ts = toleranceSectionIndex(m_ptol->m_tol, m_nom->m_sections[s]->m_name);
+	if (ts < 0)
+	{
+		return nullptr;
+	}
+	
+	CToleranceSection* tolerance = m_ptol->m_tol->m_sect[ts];
+	if (!std::isfinite(tolerance->m_camber2016_offsets[0]) && !std::isfinite(tolerance->m_camber2016_offsets[1]))
+	{
+		return nullptr;
+	}
+	*/
+	CNominalSection* nominal = m_nom->m_sections[s];
+	auto mclParams = std::make_shared<Hexagon::Blade::MeanCamberCurveParameters2016>();
+	mclParams->wholeCurve = nullptr;
+
+	// look at the nose 
+	Eigen::Vector2d nosePoint;
+	Eigen::Vector2d noseNormal;
+	computeEdge(nominal->m_letype, nominal->m_noseindex[0], nominal->m_noseindex[1], val, m_nom->m_sections[s]->m_npts,nosePoint, noseNormal);
+
+	// look at the tail 
+	Eigen::Vector2d tailPoint;
+	Eigen::Vector2d tailNormal;
+	computeEdge(nominal->m_tetype, nominal->m_tailindex[0], nominal->m_tailindex[1], val, m_nom->m_sections[s]->m_npts,
+		tailPoint, tailNormal);
+
+	// in some circumstances (partial edges, in particular) it is possible for the normal
+	// to point the wrong way
+	Eigen::Vector2d tailToNose = nosePoint - tailPoint;
+	if (tailToNose.dot(noseNormal) < 0.0)
+	{
+		noseNormal *= -1.0;
+	}
+	if (tailToNose.dot(tailNormal) > 0.0)
+	{
+		tailNormal *= -1.0;
+	}
+
+	// set up the half spaces
+	//if (nominal->m_letype != EDGE_PARTIAL)
+	//{
+	//	double noseBackoffDistance = std::isfinite(tolerance->m_camber2016_offsets[0]) ? tolerance->m_camber2016_offsets[0] : 0.0;
+	//	mclParams->noseBackoff = std::make_shared<Hexagon::Blade::CamberBackoff>();
+	//	mclParams->noseBackoff->point.reset(new Eigen::Array2d(nosePoint));
+	//	mclParams->noseBackoff->normal.reset(new Eigen::Array2d(noseNormal));
+	//	mclParams->noseBackoff->backoffDistance = noseBackoffDistance;
+	//}
+	//if (nominal->m_tetype != EDGE_PARTIAL)
+	//{
+	//	double tailBackoffDistance = std::isfinite(tolerance->m_camber2016_offsets[1]) ? tolerance->m_camber2016_offsets[1] : 0.0;
+	//	mclParams->tailBackoff = std::make_shared<Hexagon::Blade::CamberBackoff>();
+	//	mclParams->tailBackoff->point.reset(new Eigen::Array2d(tailPoint));
+	//	mclParams->tailBackoff->normal.reset(new Eigen::Array2d(tailNormal));
+	//	mclParams->tailBackoff->backoffDistance = tailBackoffDistance;
+	//}
+
+	// all done
+	return mclParams;
 }

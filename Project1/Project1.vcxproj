@@ -176,6 +176,7 @@
     <ClInclude Include="NOMINALSECTION.H" />
     <ClInclude Include="NURB.H" />
     <ClInclude Include="ODRSPLINE.H" />
+    <ClInclude Include="PLANE.H" />
     <ClInclude Include="SECTION.h" />
     <ClInclude Include="SectionCurve.h" />
     <ClInclude Include="SmallestCircle.h" />
@@ -183,6 +184,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringUtil.h" />
     <ClInclude Include="SUBCURVE.H" />
+    <ClInclude Include="SVD.H" />
     <ClInclude Include="TemplateHermiteSpline.h" />
     <ClInclude Include="ToleranceSection.h" />
     <ClInclude Include="VARTOL.H" />
@@ -217,6 +219,7 @@
     <ClCompile Include="NOMINALSECTION.CPP" />
     <ClCompile Include="NURB.CPP" />
     <ClCompile Include="ODRSPLINE.CPP" />
+    <ClCompile Include="PLANE.CPP" />
     <ClCompile Include="SECTION.cpp" />
     <ClCompile Include="SectionCurve.cpp" />
     <ClCompile Include="SmallestCircle.cpp" />
@@ -224,6 +227,7 @@
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="StringUtil.cpp" />
     <ClCompile Include="SUBCURVE.CPP" />
+    <ClCompile Include="SVD.CPP" />
     <ClCompile Include="ToleranceSection.cpp" />
     <ClCompile Include="VARTOL.CPP" />
   </ItemGroup>

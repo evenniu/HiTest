@@ -869,7 +869,8 @@ int CNominalSection::Calculate(double** m, double* ns, double* tl, double* leo, 
   m_period = m_whole->T1() - m_whole->T0();
   bugout(0, L"Calculating curve T0=%lf ,T1=%lf, leoff(%lf) ,teoff(%lf)", m_whole->T0(), m_whole->T1(), leoff, teoff);
   // determine where cvc, ccc, lec and tec transition.  Compute mean camber line
-  int rv = BuildNormalSubCurves(ns, tl, leoff, teoff, forceoffsets, leo, teo, useextr, mclParams);
+   int rv =0;
+ // int rv = BuildNormalSubCurves(ns, tl, leoff, teoff, forceoffsets, leo, teo, useextr, mclParams);
 
   bugout(0, L"Calculate Done with section %s", m_name);
   return rv;

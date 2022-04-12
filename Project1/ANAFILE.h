@@ -1,4 +1,5 @@
 #pragma once
+#include "NominalFile.h"
 #include "Analysis.h"
 #include "FlavorFile.h"
 
@@ -19,6 +20,8 @@ namespace MyFuncClassApplication
 		CAnalysisFile(wchar_t* fn, bool aut, HWND statHWND);
 		~CAnalysisFile();
 		FlavorFile* m_pFlavorFile;//读取flv文件配置
+		CNominalFile* m_pNomFile;//读取理论文件数据
+
 		CAnalysis* m_analysis;
 
 		wchar_t m_rest[MAXBUFSZ];

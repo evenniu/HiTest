@@ -132,6 +132,9 @@
     <ClInclude Include="VARTOL.H">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="NominalFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FUNClass.cpp">
@@ -240,6 +243,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="VARTOL.CPP">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NominalFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

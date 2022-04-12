@@ -288,16 +288,17 @@ namespace MyFuncClassApplication
 		fin.close();
 		m_pFlavorFile = new FlavorFile(flvName, rptPath);
 		m_analysis->m_pFlavor = m_pFlavorFile->m_flav;
+		//m_pTolFile = new CToleranceFile(m_tolFileName, flav, rptPath, m_tolFileName);
 		bool isMathFile = false;
 		wchar_t mathCheck[MAXBUFSZ];
 		Right(m_nomFileName, 4, mathCheck);
 		MakeUpper(mathCheck);
 		if (wcscmp(mathCheck, L".MTH") == 0)
 			isMathFile = true;
-		if (isMathFile)
+		if (!isMathFile)
 		{
-			m_mathFileName[0] = 0;
-			//m_pNomFile = new CNominalFile(m_nomFileName, m_pTolFile, rptPath, m_mathFileName, m_analysis->m_statusBarHWND, m_analysis->m_processNomSection, false);
+			//m_mathFileName[0] = 0;
+			m_pNomFile = new CNominalFile(m_nomFileName, rptPath, m_mathFileName, 0, m_analysis->m_processNomSection, false);
 
 		}
 		else
@@ -341,6 +342,8 @@ namespace MyFuncClassApplication
 		m_fileName[0] = 0;
 		//wcscpy_s(rptPath, m_fileName);
 		//m_pFlavorFile = NULL;
+		m_pNomFile = NULL;
+
 		m_analysis = new CAnalysis();
 		m_buf[0] = 0;
 		m_autoSave = false;
@@ -353,6 +356,7 @@ namespace MyFuncClassApplication
 		//wcscpy_s(rptPath, m_fileName);
 		//m_pFlavorFile = NULL;
 		m_analysis = new CAnalysis();
+		m_pNomFile = NULL;
 
 		m_autoSave = false;
 		m_saved = false;
@@ -361,6 +365,8 @@ namespace MyFuncClassApplication
 	{
 		//if (m_pFlavorFile)
 		//	delete m_pFlavorFile;
+		if (m_pNomFile)
+			delete m_pNomFile;
 		if (m_analysis)
 			delete m_analysis;
 	}

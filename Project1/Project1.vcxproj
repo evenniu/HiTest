@@ -119,6 +119,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;BLADEMATH_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.nanoflann.1.2.3\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Boost.1.67.0\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\include;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -170,6 +171,7 @@
     <ClInclude Include="MATRIX.H" />
     <ClInclude Include="MeanCamberCurve.h" />
     <ClInclude Include="MINSTOCK.H" />
+    <ClInclude Include="NominalFile.h" />
     <ClInclude Include="NOMINALSECTION.H" />
     <ClInclude Include="NURB.H" />
     <ClInclude Include="ODRSPLINE.H" />
@@ -209,6 +211,7 @@
     <ClCompile Include="MATRIX.CPP" />
     <ClCompile Include="MeanCamberCurve.cpp" />
     <ClCompile Include="MINSTOCK.CPP" />
+    <ClCompile Include="NominalFile.cpp" />
     <ClCompile Include="NOMINALSECTION.CPP" />
     <ClCompile Include="NURB.CPP" />
     <ClCompile Include="ODRSPLINE.CPP" />

@@ -299,7 +299,16 @@ namespace MyFuncClassApplication
 		{
 			//m_mathFileName[0] = 0;
 			m_pNomFile = new CNominalFile(m_nomFileName, rptPath, m_mathFileName, 0, m_analysis->m_processNomSection, false);
-
+			/*if (!m_pNomFile->isOk())
+			{
+				delete m_pNomFile;
+				m_pNomFile = 0;
+				return 0;
+			}*/
+			std::wstring nominalFilePath = m_nomFileName;
+			wcscpy_s(m_analysis->m_nomFilePath, nominalFilePath.c_str());  // m_analysis may need nom file name for var tol
+			delete m_pNomFile;
+			m_pNomFile = 0;
 		}
 		else
 		{

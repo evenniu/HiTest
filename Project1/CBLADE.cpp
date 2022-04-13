@@ -115,8 +115,10 @@ bool CBlade::ReadFile(FILE* fp)
     short ft;
     fread(&ft, sizeof(short), 1, fp);
     fread(&m_numSections, sizeof(short), 1, fp);
+
     fread(&m_english, sizeof(bool), 1, fp);
-    m_numSections = 1;
+    bugout(0, L"CBlade ReadFile:num sect %d, m_english=%d", m_numSections, m_english);
+
     m_section = new CSection * [m_numSections];
     wchar_t tbuf[MAXBUFSZ];
     int i;
@@ -129,8 +131,7 @@ bool CBlade::ReadFile(FILE* fp)
         m_section[i]->ZValue(d);
 
         fread(tbuf, 1, 24, fp);
-        wcscpy_s(tbuf, MAXBUFSZ, L"A-A");//由于math文件空，测试时时防止出现错误暂赋初值
-        m_section[i]->Name(tbuf);
+        m_section[i]->Name(tbuf);        //wcscpy_s(tbuf, MAXBUFSZ, L"A-A");//由于math文件空，测试时时防止出现错误暂赋初值
         bugout(0, L"CBlade::ReadFile name %s", tbuf);
 
         short s=0;
@@ -144,7 +145,7 @@ bool CBlade::ReadFile(FILE* fp)
 
         short skewed;
         fread(&skewed, sizeof(short), 1, fp);
-             
+        bugout(0, L"CBlade::ReadFile skewed %d", skewed);
         if (skewed)
         {
             double zaxis[3], origin[3];
@@ -162,13 +163,47 @@ bool CBlade::ReadFile(FILE* fp)
             align->m_borig[0] = origin[0];
             align->m_borig[1] = origin[1];
             align->m_borig[2] = origin[2];
-            //m_section[i]->SkewAlign(align);
+           // m_section[i]->SkewAlign(align);
 
             if (skewed > 9)
                 m_section[i]->m_skewReport = 1;
         }
+        else
+        {
+            if (!fread(tbuf, 1, 48, fp))   // extra stuff
+                break;
+        }
+        m_section[i]->NomCurve(readCurve(fp, m_english));
+
+        double period, leExtreme, teExtreme, pitch[3];
+        fread(&period, sizeof(double), 1, fp);    // could probably get this from whole curve
+        bugout(0, L"CBlade ReadFile period %lf ** L 202", period);
+        fread(&leExtreme, sizeof(double), 1, fp);
+        fread(&teExtreme, sizeof(double), 1, fp);
+        fread(pitch, sizeof(double), 3, fp);
+
+        m_section[i]->NomPitch(pitch);
     
-    
+        for (int j = 0; j < 4; j++)
+        {
+            double t0, t1;
+
+            fread(&t0, sizeof(double), 1, fp);
+            fread(&t1, sizeof(double), 1, fp);
+            bugout(0, L"CBlade ReadFile: j=%d t0=%f, t1=%f", j, t0, t1);
+            CSubCurve* sc = new CSubCurve(m_section[i]->NomCurve(), t0, t1, period);
+            if (j == LEC)
+                sc->Extreme(leExtreme);
+            else if (j == TEC)
+                sc->Extreme(teExtreme);
+            m_section[i]->NomPart(j, sc);
+        }
+        // read in the mean camber line straight from the file
+        bugout(0, L"readCurve:readCurve  ****");
+        m_section[i]->NomPart(4, readCurve(fp, m_english));
+      /*  int fixed_axis = -1;
+        fread(&fixed_axis, sizeof(int), 1, fp);
+        m_section[i]->m_fixedAxis = fixed_axis;*/
     }
     return true;
 }

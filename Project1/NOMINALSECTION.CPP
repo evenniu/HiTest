@@ -485,23 +485,13 @@ void CNominalSection::InitialNormalNoseTailTValues(double leoff, double teoff)
   m_whole->ClosestPoint(m_nose, bp1, &m_tnose, ltan, 0.0, m_period/2.0, 400);
   m_whole->ClosestPoint(m_tail, bp2, &m_ttail, ttan, m_period/2.0, m_period, 400);
 
-  // determine reasonable break off for LE and CV/CC transition
 
   m_whole->CircIntersect(m_nose, 1.5*leoff, bp1, 0.0, m_tnose, &m_t0[LEC]);
   m_whole->CircIntersect(m_nose, 1.5*leoff, bp2, m_tnose, m_period/2, &m_t1[LEC]);
-  
-  //bugout(0, _T("8 %f %f %f %f pass 0 le start-end"),bp1[0],bp1[1],bp2[0],bp2[1]);
-  //bugout(0, _T("pass 0 calculated m_t0[LEC] %f m_t1[LEC] %f m_period %f"), m_t0[LEC], m_t1[LEC], m_period);
-  //bugout(0, _T("10 %f %f LE1_%d"), bp1[0], bp1[1], pass);
-  //bugout(0, _T("10 %f %f LE2_%d"), bp2[0], bp2[1], pass);
-
-  // determine reasonable break off for TE and CV/CC transition
 
   m_whole->CircIntersect(m_tail, 1.5*teoff, bp1, m_period/2, m_ttail, &m_t0[TEC]);
   m_whole->CircIntersect(m_tail, 1.5*teoff, bp2, m_ttail, m_period, &m_t1[TEC]);
-  //bugout(0, _T("8 %f %f %f %f pass 0 te start-end"),bp1[0],bp1[1],bp2[0],bp2[1]);
-  //bugout(0, _T("10 %f %f TE1_%d"), bp1[0], bp1[1], pass);
-  //bugout(0, _T("10 %f %f TE2_%d"), bp2[0], bp2[1], pass);
+
 }
 
 void CNominalSection::RefineNormalNoseTailTValues(double leoff, double teoff, int forceoffsets, double* leo,
@@ -708,7 +698,7 @@ int CNominalSection::BuildNormalSubCurves(double* ns, double* tl, double leoff, 
                                           const MeanCamberCurveParameters2016* mclParams)
 {
   // determine extreme t values for m_nose and m_tail points
-
+    bugout(0, L"BuildNormalSubCurves: entered ");
   double xxx[2];
   m_whole->CalcPoint(xxx, m_whole->T0());
   bugout(0, L"BuildNormalSubCurves (%f ,%f) T0(%f)", xxx[0], xxx[1], m_whole->T0());
@@ -729,10 +719,10 @@ int CNominalSection::BuildNormalSubCurves(double* ns, double* tl, double leoff, 
     }
     else
     {
-     //RefineNormalNoseTailTValues(leoff, teoff, forceoffsets, leo, teo);
+    // RefineNormalNoseTailTValues(leoff, teoff, forceoffsets, leo, teo);
     }
 
-  /*  if (m_startCC)
+   if (m_startCC)
     {
       m_t0[CVC] = m_t1[LEC];
       m_t1[CVC] = m_t0[TEC];
@@ -745,12 +735,12 @@ int CNominalSection::BuildNormalSubCurves(double* ns, double* tl, double leoff, 
       m_t1[CVC] = m_t0[LEC];
       m_t0[CCC] = m_t1[LEC];
       m_t1[CCC] = m_t0[TEC];
-    }*/
+    }
 
-    //int i;
-    //for (i=0; i<4; i++)
-    //  if (m_t0[i] > m_t1[i])
-    //    m_t1[i] += m_period;
+    int i;
+    for (i=0; i<4; i++)
+      if (m_t0[i] > m_t1[i])
+        m_t1[i] += m_period;
     m_t0[LEC] = m_whole->T0();
     m_t1[LEC] = m_whole->T1();
     if (m_lec)
@@ -864,13 +854,12 @@ int CNominalSection::Calculate(double** m, double* ns, double* tl, double* leo, 
     bugout(0, L"Calculating %lf %lf", m_xv[k], m_yv[k]);
   }*/
   m_whole = new CNurbCurve(m_npts, m_xv, m_yv, m_kv, m_english, 0, nomtension, nomfixdat);
-
   // set m_period of closed curve
   m_period = m_whole->T1() - m_whole->T0();
   bugout(0, L"Calculating curve T0=%lf ,T1=%lf, leoff(%lf) ,teoff(%lf)", m_whole->T0(), m_whole->T1(), leoff, teoff);
   // determine where cvc, ccc, lec and tec transition.  Compute mean camber line
    int rv =0;
- // int rv = BuildNormalSubCurves(ns, tl, leoff, teoff, forceoffsets, leo, teo, useextr, mclParams);
+   rv = BuildNormalSubCurves(ns, tl, leoff, teoff, forceoffsets, leo, teo, useextr, mclParams);
 
   bugout(0, L"Calculate Done with section %s", m_name);
   return rv;

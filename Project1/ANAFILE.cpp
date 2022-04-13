@@ -28,7 +28,7 @@ namespace MyFuncClassApplication
 		std::ifstream  fin(m_rest, std::ios::in);
 		if (!fin)
 		{
-
+			return 0;
 		}
 		string line;
 		std::string  x = "";
@@ -40,6 +40,7 @@ namespace MyFuncClassApplication
 		string::size_type idx;
 		const char* strline;
 		int strlinesize = 0;
+		int numTraces = 0;
 		while (getline(fin, line)) // line中不包括每行的换行符
 		{
 			idx = line.find("FLAVOR");
@@ -351,9 +352,59 @@ namespace MyFuncClassApplication
 		int nointer = 0;
 		int overrideCalcs = 0;
 		m_numExtraDimensions = 0;
+		if (!allowOverride)  // we weren't invoked by a command line argument
+			overrideCalcs = false;
+		allowOverride = false;  // set this false so that next file processed by menu pick will ignore override
 
+		if (m_analysis->m_pFlavor->m_numCalc > 0 && !overrideCalcs)
+		{
+			m_analysis->m_numCalc = m_analysis->m_pFlavor->m_numCalc;
+			m_analysis->m_calc = new unsigned short[2 * m_analysis->m_numCalc];
+			for (int c = 0; c < m_analysis->m_numCalc; c++)
+				m_analysis->m_calc[c] = (unsigned short)m_analysis->m_pFlavor->m_calcs[c];
+		}
+
+		m_analysis->m_calcLabels = new wchar_t* [m_analysis->m_numCalc];
+		for (int c = 0; c < m_analysis->m_numCalc; c++)
+			m_analysis->m_calcLabels[c] = new wchar_t[MAXBUFSZ];
+
+		m_analysis->m_sectionNames = new wchar_t* [m_analysis->m_numSect];
+		for (int i = 0; i < m_analysis->m_numSect; i++)
+		{
+			m_analysis->m_sectionNames[i] = new wchar_t[MAXBUFSZ];
+			wcscpy_s(m_analysis->m_sectionNames[i], MAXBUFSZ, m_analysis->m_sect[i].m_sectName);
+		}
+		if (numTraces > 0)
+		{
+			m_analysis->m_numTraces = numTraces;
+			m_analysis->m_traces = new wchar_t* [m_analysis->m_numTraces];
+			m_analysis->m_tnames = new wchar_t* [m_analysis->m_numTraces];
+			int i;
+			for (i = 0; i < m_analysis->m_numTraces; i++)
+			{
+				m_analysis->m_tnames[i] = new wchar_t[MAXBUFSZ];
+				m_analysis->m_tnames[i][0] = 0;
+				m_analysis->m_traces[i] = new wchar_t[MAXBUFSZ];
+				m_analysis->m_traces[i][0] = 0;
+			}
+
+			i = 0;
+			while (head)
+			{
+				wcscpy_s(m_analysis->m_tnames[i], 50, head->var);
+				wcscpy_s(m_analysis->m_traces[i], 50, head->val);
+
+				i++;
+
+				tail = head;
+				head = head->Next;
+				delete tail;
+			}
+			head = tail = 0;
+		}
 		fin.clear();
 		fin.close();
+		return 1;
 	}
 	/// <summary>
 	/// 

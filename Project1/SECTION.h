@@ -269,6 +269,7 @@ public:
 	void MakeNomArrays(int numPts, const Hexagon::Blade::MeanCamberCurveParameters2016* mclParams);
 	void AddNomXYIJK(int i, double* xyijk);
 	void AddTol(int i, double* mptol);
+	void ResetCurves();
 	bool AssignPoints(double* xv, double* yv, int n, int* start, int* end);
 	int Chord(int flg, double* lcp, double* tcp, double* lctr, double* tctr, double* ltv, double* ttv, double* m = 0,
 		double* w = 0, double* tew = 0, double* zeroPt = 0);

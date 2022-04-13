@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Circle.h"
 #include "SubCurve.h"
+#include "BestFit.h"
+
 #include "SmallestCircle.h"
 #include "SECTION.h"
 #include "SectionCurve.h"
@@ -19,6 +21,11 @@
 
 #include "CurvePolygon.h"
 #include "MeanCamberCurve.h"
+#include <HexagonGDT/MathTypes.h>
+#include <HexagonGDT/FitProfile.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/detail/sha1.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 using namespace Hexagon;
 
 #ifdef _DEBUG
@@ -479,6 +486,9 @@ Eigen::Isometry2d TestcreateGuessTransform(const CFitParams& fp, const ChordInfo
     return Eigen::Isometry2d::Identity();
 
 }
+
+
+
 void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
 {
     // const auto nominalSectionCurve = Hexagon::Blade::nominalSectionCurve(section);
@@ -495,6 +505,23 @@ void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
     PointerType measuredConcaveHalfCurve = MakeMeasuredHalfCurve(section, CCC);
     PointerType measuredConvexHalfCurve = MakeMeasuredHalfCurve(section, CVC);
 }
+
+// create a function that looks for t-values of closest approach to a point
+//template <class TreeType>
+//double findNearestTValue(CCurve* curve, const TreeType& tree, ptrdiff_t numberOfPointsInTree, double* treeTValues,
+//    double* point)
+//{
+//    ptrdiff_t index;
+//    double squaredDistance;
+//    tree.query(point, 1, &index, &squaredDistance);
+//    double lowT = (index > 0) ? treeTValues[index - 1] : treeTValues[numberOfPointsInTree - 1] - curve->Period();
+//    double highT = (index < numberOfPointsInTree - 1) ? treeTValues[index + 1] : treeTValues[0] + curve->Period();
+//    double t;
+//    Eigen::Vector2d trash;
+//    curve->NewClosestPoint(point, trash.data(), &t, nullptr, lowT, highT, 1);
+//    return t;
+//}
+
 /// <summary>
 /// 
 /// </summary>
@@ -534,7 +561,7 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     const Eigen::Isometry2d guessTransform =
         TestcreateGuessTransform(fp, nominalChordInfo, measuredChordInfo,
             Hexagon::Blade::measuredSectionCurve(this), LEType(), TEType());
-    //Hexagon::Blade::FitOptions options;
+   // Hexagon::Blade::FitOptions options;
 
     // construct inner and outer tolerance curves if applicable
     const ptrdiff_t numFineSamples = 16384;
@@ -559,10 +586,11 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     // set the rotation and translation options
     //setRotationOptions(options, fp);
     //setTranslationOptions(options, fp, nominalChordInfo, measuredChordInfo);
+    ///std::vector<Hexagon::Blade::LinearDeviation> linearDeviations1;
+
     if (fp.algorithm == BestFitAlgorithm::LeastSquares)
     {
-        //auto fitTransform = Hexagon::Blade::computeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options,
-        //    linearDeviations1, inchSize);
+        //auto fitTransform =TestcomputeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options, linearDeviations1, inchSize);
     }
     return true;
 }
@@ -961,4 +989,61 @@ double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d&
 // this function should only be called when the line only intersects the curve in one place
 
 
+void CSection::ResetCurves()
+{
+    int i;
+
+    for (i = 0; i < 5; i++)
+    {
+        if (m_meaPart[i])
+            delete m_meaPart[i];
+        m_meaPart[i] = 0;
+    }
+
+    if (m_meaCurve)
+        delete m_meaCurve;
+    m_meaCurve = 0;
+
+    if (m_BCCurve)
+        delete m_BCCurve;
+    m_BCCurve = 0;
+
+    if (m_cxpt)
+        delete[] m_cxpt;
+    if (m_cypt)
+        delete[] m_cypt;
+    if (m_czpt)
+        delete[] m_czpt;
+
+    if (m_ival)
+        delete[] m_ival;
+    if (m_jval)
+        delete[] m_jval;
+    if (m_kval)
+        delete[] m_kval;
+
+    if (m_mxpt)
+        delete[] m_mxpt;
+    if (m_mypt)
+        delete[] m_mypt;
+
+    if (m_nxpt)
+        delete[] m_nxpt;
+    if (m_nypt)
+        delete[] m_nypt;
+
+    if (m_nomt)
+        delete[] m_nomt;
+
+    if (m_partOf)
+        delete[] m_partOf;
+
+    m_totalPoints = 0;
+
+    m_mxpt = m_mypt = m_nxpt = m_nypt = m_nomt = 0;
+    m_ival = m_jval = m_kval = m_cxpt = m_cypt = m_czpt = 0;
+    m_partOf = 0;
+
+    m_meaPitch[2] = m_nomPitch[2] = -1.0;
+}
 

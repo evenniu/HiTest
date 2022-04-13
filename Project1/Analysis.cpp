@@ -31,9 +31,10 @@ int CAnalysis::ReOrder(CAnalysisSect& sect, int* n1, int* n2, int types)
 int CAnalysis::FitSplines()
 {
 	int i;
+	bugout(0, L"FitSplines:Processing analysis file");
 
-	//for (i = 0; i < m_pBlade->NumSect(); i++)
-	//	m_pBlade->m_section[i]->ResetCurves();
+	for (i = 0; i < m_pBlade->NumSect(); i++)
+		m_pBlade->m_section[i]->ResetCurves();
 
 	double t0[4], t1[4];
 	CCurve* lec, * tec, * cvc, * ccc;

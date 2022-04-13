@@ -5,6 +5,13 @@
 #include <string>
 namespace MyFuncClassApplication
 {
+	struct tracelist
+	{
+		wchar_t var[50];
+		wchar_t val[50];
+		tracelist* Next;
+	};
+
 	int CAnalysisFile::ReadFile(bool& allowOverride)
 	{
 		wchar_t rptPath[MAXBUFSZ];
@@ -284,9 +291,8 @@ namespace MyFuncClassApplication
 				continue;
 			}
 		}
-		fin.clear();
-		fin.close();
-		m_pFlavorFile = new FlavorFile(flvName, rptPath);
+		
+		m_pFlavorFile = new FlavorFile(flvName, rptPath);//CFlavorFile
 		m_analysis->m_pFlavor = m_pFlavorFile->m_flav;
 		//m_pTolFile = new CToleranceFile(m_tolFileName, flav, rptPath, m_tolFileName);
 		bool isMathFile = false;
@@ -332,8 +338,22 @@ namespace MyFuncClassApplication
 		}
 		m_analysis->m_pBlade = new CBlade(m_mathFileName);
 		int numBlade = m_analysis->m_pBlade->NumSect();
+		m_analysis->m_decAng = 3;// myGetProfileInt(L"DecimalsAngle", 3);
+		if (m_analysis->m_pBlade->IsEnglish())
+			m_analysis->m_decMea = 4;// myGetProfileInt(L"DecimalsInch", 4);
+		else
+			m_analysis->m_decMea = 3;//myGetProfileInt(L"DecimalsMM", 3);
 
+		m_analysis->m_extraTolerance = 0.0;
 
+		tracelist* head = 0, * tail = 0;
+
+		int nointer = 0;
+		int overrideCalcs = 0;
+		m_numExtraDimensions = 0;
+
+		fin.clear();
+		fin.close();
 	}
 	/// <summary>
 	/// 

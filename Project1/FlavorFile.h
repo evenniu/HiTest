@@ -11,6 +11,7 @@ class DLLEXPORT FlavorFile
 private:
 	bool ReadFile();
 	wchar_t m_flvfileName[MAXBUFSZ];
+	wchar_t m_rptPath[MAXBUFSZ];
 public:
 	CFlavor* m_flav;
 	FlavorFile();

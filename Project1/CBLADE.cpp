@@ -201,12 +201,59 @@ bool CBlade::ReadFile(FILE* fp)
         // read in the mean camber line straight from the file
         bugout(0, L"readCurve:readCurve  ****");
         m_section[i]->NomPart(4, readCurve(fp, m_english));
-      /*  int fixed_axis = -1;
-        fread(&fixed_axis, sizeof(int), 1, fp);
-        m_section[i]->m_fixedAxis = fixed_axis;*/
+    }
+    // read raw nominal points
+    for (i = 0; i < m_numSections; i++)
+    {
+        int numPts;
+        fread(&numPts, sizeof(int), 1, fp);
+        auto mclParams = Hexagon::Blade::readMeanCamberCurveParameters2016(fp);
+        m_section[i]->MakeNomArrays(numPts, mclParams.get());
+        //bugout(0, L"ReadFile: AddTol,  SectionID=%d ****,numpoints=%d", i, numPts);
+        for (int j = 0; j < numPts; j++)
+        {
+            double xyijk[5];
+            fread(xyijk, sizeof(double), 5, fp);
+            m_section[i]->AddNomXYIJK(j, xyijk);
+            double tolerances[2];
+            fread(tolerances, sizeof(double), 2, fp);
+            m_section[i]->AddTol(j, tolerances);
+        }
+    }
+    /************OpenArea infos*************************************/
+    for (int s = 0; s < m_numSections; s++)
+    {
+        int tmp_areaCount = 0;
+        fread(&tmp_areaCount, sizeof(int), 1, fp); //读取开口区域个数
+        bugout(0, L"CBLADE::ReadFile: SectionID=%d, areaCount=%d", s, tmp_areaCount);
+        m_section[s]->m_openareaCount = tmp_areaCount;
+        if (tmp_areaCount > 0)
+        {
+            for (int i = 0; i < tmp_areaCount; i++)
+            {
+                double tmp_areaStartpoint[2];
+                double tmp_areaEndpoint[2];
+                fread(tmp_areaStartpoint, sizeof(double), 2, fp);
+                fread(tmp_areaEndpoint, sizeof(double), 2, fp);
+
+                m_section[s]->m_areaStartPoint[i][0] = tmp_areaStartpoint[0];
+                m_section[s]->m_areaStartPoint[i][1] = tmp_areaStartpoint[1];
+                m_section[s]->m_areaEndPoint[i][0] = tmp_areaEndpoint[0];
+                m_section[s]->m_areaEndPoint[i][1] = tmp_areaEndpoint[1];
+                int tmp_areaIndex[2];
+                fread(tmp_areaIndex, sizeof(int), 2, fp);
+                m_section[s]->m_areaIndex[i][0] = tmp_areaIndex[0];
+                m_section[s]->m_areaIndex[i][1] = tmp_areaIndex[1];
+                bugout(0, L"CBLADE::ReadFile:(%f,%f)(%f %f) -[%d %d] ", tmp_areaStartpoint[0], tmp_areaStartpoint[1], tmp_areaEndpoint[0], tmp_areaEndpoint[1], 
+                    tmp_areaIndex[1], tmp_areaIndex[1]);
+            }
+        }
     }
     return true;
 }
+// as of November 2017, these are defined in SECTION.CPP
+Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n);
+
 //bool CBlade::FitBlade(const CFitParams* fp, int sec1, int sec2)
 //{
 //}

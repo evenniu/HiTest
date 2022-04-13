@@ -759,7 +759,7 @@ int CNominalSection::BuildNormalSubCurves(double* ns, double* tl, double leoff, 
       delete m_tec;
     m_tec = new CSubCurve(m_whole, m_t0[TEC], m_t1[TEC], m_period/2);
     m_tec->Extreme(m_whole->T1());
-    /* 
+   
     if (m_cvc)
       delete m_cvc;
     m_cvc = new CSubCurve(m_whole, m_t0[CVC], m_t1[CVC], m_period);
@@ -767,15 +767,14 @@ int CNominalSection::BuildNormalSubCurves(double* ns, double* tl, double leoff, 
     if (m_ccc)
       delete m_ccc;
     m_ccc = new CSubCurve(m_whole, m_t0[CCC], m_t1[CCC], m_period);
-    
-    */
+   
 
     // Calc Pitch Circle
 
     m_pitch[0] = m_pitch[1] = m_pitch[2] = -1.0;
     bugout(0, L"BuildNormalSubCurves: create SubCurve LEC [%f %f] CVC [%f %f]  TEC [%f %f] CCC [%f %f] P", m_t0[LEC], m_t1[LEC],
            m_t0[CVC], m_t1[CVC], m_t0[TEC], m_t1[TEC], m_t0[CCC], m_t1[CCC]);
-    //auto thicknessResult = Hexagon::Blade::maxThickness(*m_whole, *m_cvc, *m_ccc, 2048, 1e-5);
+ ///  auto thicknessResult = Hexagon::Blade::maxThickness(*m_whole, *m_cvc, *m_ccc, 2048, 1e-5);
     //m_pitch[2] = thicknessResult.thickness;
 
     //int rv;
@@ -1827,7 +1826,7 @@ int CNominalSection::BuildSquarePartialMeanCamber(int useextr, const MeanCamberC
 
   int numNomMCLPoints = 75;// myGetProfileInt(L"NominalMCLPoints", 75);
   
-  //bugout(0, L"CVC");
+  bugout(0, L"CVC");
   //m_cvc->BugOut(200);
   //bugout(0, L"CCC");
   //m_ccc->BugOut(200);

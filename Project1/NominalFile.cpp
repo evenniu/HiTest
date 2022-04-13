@@ -114,7 +114,6 @@ bool CNominalFile::Translate(int* firstWarning)
 				m_nom->m_numSect = tmp_m_numSect;
 				ok = 1;
 			}
-			//continue;
 		}
 		if (!ok)
 		{
@@ -435,10 +434,149 @@ bool CNominalFile::Translate(int* firstWarning)
 			}
 			bugout(0, L"Translate:s=%d m_npts:%d", s, m_nom->m_sections[s]->m_npts);
 		}//for (s = 0; s < m_nom->m_numSect; s++)
-		for (s = 0; s < m_nom->m_numSect; s++)
+		/****************读取变公差配置*****************************/
+		for (int s1 = 0; s1 < m_nom->m_numSect; s1++)
 		{
+			if (!getline(fin, line))
+			{
+				ErrorStruct es(BE_MISSINGPOINTNOM, s + 1);
+				//m_error->AddError(&es);
+				return false;
+			}
+			strline = line.c_str();
+			strlinesize = line.length();
+			MultiByteToWideChar(CP_ACP, 0, strline, strlen(strline) + 1, rest, MAXBUFSZ);
+			int tolsegCount = 0;
+			int tol_ccw = 0, ns;
+			ns = swscanf_s(rest, L"%s %s %d", key, MAXBUFSZ, tmp_secName, MAXBUFSZ, &tolsegCount);
+			if (wcscmp(key, L"PERIODTOL_NUM") == 0)
+			{
+				if (tol_ccw != 1)
+				{
+					tol_ccw = 0;
+				}
+				if (ns == 2)
+				{
+					tol_ccw = 1;
+				}
+				bugout(0, L"Translate: read PERIODTOL_NUM:tolsegCount=%d, ccw=%d", tolsegCount, tol_ccw);
+				if (tolsegCount > 0)
+				{
+					m_nom->m_sections[s1]->MakeTolSegStore(tolsegCount);
+					m_nom->m_sections[s1]->m_tolCCW = tol_ccw;
+				}
+				for (int m = 0; m < tolsegCount; m++)
+				{
+					wchar_t segname[MAXBUFSZ], tolsegName[MAXBUFSZ];
+					int start_poi, end_poi, curv_coef = 0;
+					int idx = 0;
+					double m_pTol_start;
+					double m_pTol_end;
+					double m_mTol_start;
+					double m_mTol_end;
+					if (!getline(fin, line))
+					{
+						ErrorStruct es(BE_MISSINGPOINTNOM, s + 1);
+						//m_error->AddError(&es);
+						return false;
+					}
+					strline = line.c_str();
+					strlinesize = line.length();
+					MultiByteToWideChar(CP_ACP, 0, strline, strlen(strline) + 1, rest, MAXBUFSZ);
+					// PERIODTOL
+					ns = swscanf_s(rest, L"%s %d %s %d %d %lf %lf %lf %lf", segname, MAXBUFSZ, &idx, tolsegName, MAXBUFSZ,
+						&start_poi, &end_poi, &m_pTol_start, &m_pTol_end, &m_mTol_start, &m_mTol_end);
+					if (wcscmp(segname, L"PERIODTOL") == 0)
+					{
+						//bugout(0, L"Translate: read PERIODTOL_NUM:tolSegName:%s,idx=%d,(%d~%d) U(%f %f) L(%f %f)\n", tolsegName, idx,
+						//       start_poi, end_poi, m_pTol_start, m_pTol_end, m_mTol_start, m_mTol_end);
+					}
+					m_nom->m_sections[s1]->m_start_point[m] = start_poi;
+					m_nom->m_sections[s1]->m_end_point[m] = end_poi;
+					m_nom->m_sections[s1]->m_pTol_start[m] = m_pTol_start;
+					m_nom->m_sections[s1]->m_pTol_end[m] = m_pTol_end;
+					m_nom->m_sections[s1]->m_mTol_start[m] = m_mTol_start;
+					m_nom->m_sections[s1]->m_mTol_end[m] = m_mTol_end;
+					if (curv_coef < 0)
+					{
+						curv_coef = 0;
+					}
+					m_nom->m_sections[s1]->m_curvature_coef[m] = curv_coef;
+					int iSize =
+						WideCharToMultiByte(CP_ACP, 0, tolsegName, -1, NULL, 0, NULL, NULL); // iSize =wcslen(pwsUnicode)+1=6
+					char* pszMultiByte;
+					pszMultiByte = (char*)malloc(iSize * sizeof(char));
+					WideCharToMultiByte(CP_ACP, 0, tolsegName, -1, pszMultiByte, iSize, NULL, NULL);
+					//m_nom->m_sections[s1]->m_tolsegNameVec.push_back(pszMultiByte);
+					bugout(0, L"Translate: read from :Validate idx=%d,startIndex:%d,endIndex:%d U(%f %f) L(%f %f)\n", idx,
+					   m_nom->m_sections[s1]->m_start_point[m], m_nom->m_sections[s1]->m_end_point[m],
+					   m_nom->m_sections[s1]->m_pTol_start[m], m_nom->m_sections[s1]->m_pTol_end[m],
+					   m_nom->m_sections[s1]->m_mTol_start[m], m_nom->m_sections[s1]->m_mTol_end[m]);
+				}
+			}
+		}
+
+		/****************读取开口区域*****************************/
+		for (int s1 = 0; s1 < m_nom->m_numSect; s1++)
+		{
+			if (!getline(fin, line))
+			{
+				ErrorStruct es(BE_MISSINGPOINTNOM, s + 1);
+				//m_error->AddError(&es);
+				return false;
+			}
+			strline = line.c_str();
+			strlinesize = line.length();
+			MultiByteToWideChar(CP_ACP, 0, strline, strlen(strline) + 1, rest, MAXBUFSZ);
+			int areaCount = 0;
+			int tol_ccw = 0, ns;
+			ns = swscanf_s(rest, L"%s %s %d", key, MAXBUFSZ, tmp_secName, MAXBUFSZ, &areaCount);
+			if (wcscmp(key, L"OPENAREA_NUM") == 0)
+			{
+				bugout(0, L"Translate: read OPENAREA_NUM:secName=%s,AreaCount=%d", tmp_secName, areaCount);
+				m_nom->m_sections[s1]->m_areaCount = areaCount;
+				for (int m = 0; m < areaCount; m++)
+				{
+					wchar_t segname[MAXBUFSZ], tolsegName[MAXBUFSZ];
+
+					double m_startX;
+					double m_startY;
+					double m_endX;
+					double m_endY;
+					int s_index = 0;
+					int e_index = 0;
+					if (!getline(fin, line))
+					{
+						ErrorStruct es(BE_MISSINGPOINTNOM, s1 + 1);
+						//m_error->AddError(&es);
+						return false;
+					}
+					strline = line.c_str();
+					strlinesize = line.length();
+					MultiByteToWideChar(CP_ACP, 0, strline, strlen(strline) + 1, rest, MAXBUFSZ);
+					// PERIODTOL
+					ns = swscanf_s(rest, L"%s %lf %lf %lf %lf %d %d", segname, MAXBUFSZ, &m_startX, &m_startY, &m_endX, &m_endY, &s_index, &e_index);
+					m_nom->m_sections[s1]->m_areaStartPoint[m][0] = m_startX;
+					m_nom->m_sections[s1]->m_areaStartPoint[m][1] = m_startY;
+					m_nom->m_sections[s1]->m_areaEndPoint[m][0] = m_endX;
+					m_nom->m_sections[s1]->m_areaEndPoint[m][1] = m_endY;
+					m_nom->m_sections[s1]->m_areaIndex[m][0] = s_index;
+					m_nom->m_sections[s1]->m_areaIndex[m][1] = e_index;
+					//bugout(0, L"Translate:  OPENAREA_NUM:s-e(%d-%d)", s_index, e_index);
+				}
+			}
 
 		}
+	}
+	if (m_readonly)
+		return true;
+	bugout(0, L"Translate； WriteFile save MATH File ");
+
+	if (!m_nom->WriteFile(m_mathFile))
+	{
+		ErrorStruct es(BE_NOFILECREATE);
+		//m_error->AddError(&es);
+		return false;
 	}
 	return false;
 }

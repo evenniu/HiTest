@@ -431,7 +431,7 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 
 bool CAnalysis::FillCells()
 {
-	bugout(0,L"Fillcells(): enterdd");
+	bugout(0,L"Fillcells(): enterd ***");
 	m_refNomCentroid[0] = m_refNomCentroid[1] = m_refActCentroid[0] = m_refActCentroid[1] = -1.0e20;
 	m_good = true;
 	int i, j, bs;

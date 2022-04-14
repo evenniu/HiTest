@@ -507,20 +507,20 @@ void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
 }
 
 // create a function that looks for t-values of closest approach to a point
-//template <class TreeType>
-//double findNearestTValue(CCurve* curve, const TreeType& tree, ptrdiff_t numberOfPointsInTree, double* treeTValues,
-//    double* point)
-//{
-//    ptrdiff_t index;
-//    double squaredDistance;
-//    tree.query(point, 1, &index, &squaredDistance);
-//    double lowT = (index > 0) ? treeTValues[index - 1] : treeTValues[numberOfPointsInTree - 1] - curve->Period();
-//    double highT = (index < numberOfPointsInTree - 1) ? treeTValues[index + 1] : treeTValues[0] + curve->Period();
-//    double t;
-//    Eigen::Vector2d trash;
-//    curve->NewClosestPoint(point, trash.data(), &t, nullptr, lowT, highT, 1);
-//    return t;
-//}
+template <class TreeType>
+double findNearestTValue(CCurve* curve, const TreeType& tree, ptrdiff_t numberOfPointsInTree, double* treeTValues,
+    double* point)
+{
+    ptrdiff_t index;
+    double squaredDistance;
+    tree.query(point, 1, &index, &squaredDistance);
+    double lowT = (index > 0) ? treeTValues[index - 1] : treeTValues[numberOfPointsInTree - 1] - curve->Period();
+    double highT = (index < numberOfPointsInTree - 1) ? treeTValues[index + 1] : treeTValues[0] + curve->Period();
+    double t;
+    Eigen::Vector2d trash;
+    curve->NewClosestPoint(point, trash.data(), &t, nullptr, lowT, highT, 1);
+    return t;
+}
 
 /// <summary>
 /// 

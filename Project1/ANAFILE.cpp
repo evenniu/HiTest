@@ -423,7 +423,9 @@ namespace MyFuncClassApplication
 		//wcscpy_s(rptPath, m_fileName);
 		//m_pFlavorFile = NULL;
 		m_pNomFile = NULL;
+		std::string savePath = "C:/Users/Public/Documents/Hitest.out";
 
+		DeleteFileA(savePath.c_str());
 		m_analysis = new CAnalysis();
 		m_buf[0] = 0;
 		m_autoSave = false;

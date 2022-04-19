@@ -191,6 +191,7 @@ public:
 	bool CalcAlign(int r, BladeBestFitType typ, int doingBow = 0, int bfind = 0, double* mtols = NULL, double* ptols = NULL);
 	bool Locate(int r, double* xy, int doingBow);
 	bool FillCells();
+	int GetMethod(int c, int ts);
 	double inchSize() const
 	{
 		//return m_pBlade->IsEnglish() ? 1.0 : 25.4;

@@ -28,6 +28,15 @@ int CAnalysis::ReOrder(CAnalysisSect& sect, int* n1, int* n2, int types)
 	int s;
 	return 0;
 }
+int CAnalysis::GetMethod(int c, int ts)
+{
+	int method = m_pFlavor->m_method[m_calc[c]];
+	//int overrideMethod = m_pTol->m_sect[ts]->m_dim[m_calc[c]].m_methodOverride;
+	//if (overrideMethod != -1)
+	//	method = overrideMethod;
+
+	return method;
+}
 int CAnalysis::FitSplines()
 {
 	int i;
@@ -456,6 +465,28 @@ bool CAnalysis::FillCells()
 			m_pZoneY = new double* [m_numSect];
 		}
 
+		if (!m_pZoneNew && m_pFlavor->m_specials[SpecialSaveXYZFile] && m_pFlavor->m_xyzFormat == 1)
+		{
+			m_pZoneNew = new double* [m_numSect];
+			m_pZoneX = new double* [m_numSect];
+			m_pZoneY = new double* [m_numSect];
+		}
+		// will need to fill m_pZoneNew if form calcs use nom file method
+
+		for (i = 0; i < m_numCalc && !m_pZoneNew; i++)
+		{
+			if (m_calc[i] == CalcMinForm || m_calc[i] == CalcMaxForm)
+			{
+				int method = GetMethod(i, 0);
+				if (method == MethodFormVariableNomFile || method == MethodFormVariableVarFile)
+				{
+					m_pZoneNew = new double* [m_numSect];
+					m_pZoneX = new double* [m_numSect];
+					m_pZoneY = new double* [m_numSect];
+					break;
+				}
+			}
+		}
 		m_pBestFitSection = new int* [m_numSect];
 		for (i = 0; i < m_numSect; i++)
 		{

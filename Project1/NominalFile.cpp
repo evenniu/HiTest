@@ -38,7 +38,7 @@ CNominalFile::CNominalFile(wchar_t* nominalFile, wchar_t* rptPath, wchar_t* math
 	m_nom = new CNominal();
 
 	m_firstWarning = -1;
-	bugout(0, L"new CNominalFile will cal Translate ");
+	bugout(0, L"new CNominalFile(): will cal Translate ");
 	Translate(&m_firstWarning);
 
 	bugout(0, L"CNominalFile:Translate done ! ");

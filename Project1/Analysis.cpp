@@ -4,6 +4,8 @@
 #include "SUBCURVE.H"
 #include "SectionCurve.h"
 #include "MeanCamberCurve.h"
+#include "ArraySlicing.h"
+#include "EigenAbstractCurve.h"
 
 CAnalysis::CAnalysis(): m_error(new CBladeError())
 {
@@ -272,6 +274,13 @@ void CAnalysis::Initialize()
 	m_extraTolerance = 0.0;
 }
 
+
+// as of October 2018, the following functions are defined in SECTION.CPP
+CBestFit* createMeasuredPointsToNominalCurveBestFit(const Hexagon::Blade::SectionCurve& nominalCurves,
+	const Eigen::Isometry2d& measuredToNominalTransform,
+	const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints, const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,const CFitParams& fitParams, double* mtols = nullptr, double* ptols = nullptr);
+Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n);
+
 /// <summary>
 /// 
 /// </summary>
@@ -298,6 +307,14 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 	if (ts < 0)
 		return false;
+	const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(
+		m_pBlade->m_section[bs]->m_mxpt, m_pBlade->m_section[bs]->m_mypt, m_pBlade->m_section[bs]->m_totalPoints);
+	const Eigen::Map<const Eigen::ArrayXi> partOf(m_pBlade->m_section[bs]->m_partOf,m_pBlade->m_section[bs]->m_totalPoints);
+
+/*createMeasuredPointsToNominalCurveBestFit(Hexagon::Blade::nominalSectionCurve(m_pBlade->m_section[bs]),
+			Hexagon::Blade::toIsometry2d(*wholeFit->GetAlign()), measuredPoints,
+			Eigen::ArrayXb::Ones(partOf.size()), fp, mtols, ptols)*/;
+
 	//if (typ == BladeBestFitType::BestFitLeastSquares)
 	//{
 	//	if (m_pBestFitSection[r][bfind] >= 0)
@@ -313,15 +330,15 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 		fp.weightcurve[TEC] = 1;
 		fp.lepercent = 5.0;
 		fp.tepercent = 95.0;
-	//	//fp.fitcurve[CVC] = m_pFlavor->m_useCV[bfind] ? 1 : 0;
-	//	//fp.fitcurve[CCC] = m_pFlavor->m_useCC[bfind] ? 1 : 0;
-	//	//fp.fitcurve[LEC] = m_pFlavor->m_useLE[bfind] ? 1 : 0;
-	//	//fp.fitcurve[TEC] = m_pFlavor->m_useTE[bfind] ? 1 : 0;
+		fp.fitcurve[CVC] = m_pFlavor->m_useCV[bfind] ? 1 : 0;
+		fp.fitcurve[CCC] = m_pFlavor->m_useCC[bfind] ? 1 : 0;
+		fp.fitcurve[LEC] = m_pFlavor->m_useLE[bfind] ? 1 : 0;
+		fp.fitcurve[TEC] = m_pFlavor->m_useTE[bfind] ? 1 : 0;
 
-	//	//fp.weightcurve[CVC] = m_pFlavor->m_weightCV[bfind];
-	//	//fp.weightcurve[CCC] = m_pFlavor->m_weightCC[bfind];
-	//	//fp.weightcurve[LEC] = m_pFlavor->m_weightLE[bfind];
-	//	//fp.weightcurve[TEC] = m_pFlavor->m_weightTE[bfind];
+		fp.weightcurve[CVC] = m_pFlavor->m_weightCV[bfind];
+		fp.weightcurve[CCC] = m_pFlavor->m_weightCC[bfind];
+		fp.weightcurve[LEC] = m_pFlavor->m_weightLE[bfind];
+		fp.weightcurve[TEC] = m_pFlavor->m_weightTE[bfind];
 		if (m_pFlavor->m_noTranslate[bfind])
 			fp.tranfit = 1; // no translation
 		else
@@ -363,7 +380,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	{
 		return false;
 	}
-	//bugout(0, L"CalcAlign: rotfit %d tranfit %d ****", fp.rotfit, fp.tranfit);
+	bugout(0, L"CalcAlign: rotfit %d tranfit %d ****", fp.rotfit, fp.tranfit);
 
 	return false;
 }

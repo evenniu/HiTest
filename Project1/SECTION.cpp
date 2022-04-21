@@ -346,6 +346,64 @@ Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValu
     points.row(1) = Eigen::Map<const Eigen::RowVectorXd>(yValues, n);
     return points;
 }
+double minMaxObjective(const CBestFit& bf, const CFitParams& fitParams)
+{
+    std::vector<double> objectives;
+    for (int side = 0; side < 4; side++)
+    {
+        if (fitParams.fitcurve[side] && fitParams.weightcurve[side] > 0.0)
+        {
+            objectives.push_back(std::max(std::abs(bf.m_mindev[side]), std::abs(bf.m_maxdev[side])));
+        }
+    }
+    if (objectives.empty())
+    {
+        return 0.0;
+    }
+    return *std::max_element(objectives.begin(), objectives.end());
+}
+void updateBestFit_measuredPointsToNominalCurve(CBestFit* bf, const Hexagon::Blade::SectionCurve& nominalCurves,
+    const Eigen::Isometry2d& measuredToNominalTransform,
+    const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
+    const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
+    const CFitParams& fitParams, double* mtols = nullptr,
+    double* ptols = nullptr)
+{
+    // figure out the closest nominal points
+    const ptrdiff_t N = measuredPoints.cols();
+    const Eigen::Matrix2Xd alignedMeasuredPoints = measuredToNominalTransform * measuredPoints;
+    Eigen::VectorXd nominalT(N);
+    nominalCurves.whole->FindClosestTValues(nominalT.data(), alignedMeasuredPoints.data(), N);
+    Eigen::Matrix2Xd nominalPoints(2, N);
+    Eigen::Matrix2Xd nominalTangents(2, N);
+    nominalCurves.whole->CalcPoints(nominalPoints.data(), nominalT.data(), N, nominalTangents.data());
+    Eigen::Matrix2Xd ijk(2, N);
+    ijk.row(0) = nominalTangents.row(1);
+    ijk.row(1) = -nominalTangents.row(0);
+    ijk.colwise().normalize();
+    const Eigen::ArrayXd distances =
+        (alignedMeasuredPoints - nominalPoints).cwiseProduct(ijk).colwise().sum().transpose();
+
+    // assign the points to a curve, after fitting
+    Eigen::ArrayXi fittedBestPartOf(N);
+    fittedBestPartOf =
+        Hexagon::Blade::tIsInSubcurve_eigen(nominalT, *nominalCurves.leading, nominalCurves.whole->period())
+        .select(LEC, fittedBestPartOf);
+}
+
+CBestFit* createMeasuredPointsToNominalCurveBestFit(const Hexagon::Blade::SectionCurve& nominalCurves,
+    const Eigen::Isometry2d& measuredToNominalTransform,
+    const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
+    const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
+    const CFitParams& fitParams, double* mtols = nullptr,
+    double* ptols = nullptr)
+{
+    auto result = std::make_unique<CBestFit>(static_cast<int>(measuredPoints.cols()));
+    updateBestFit_measuredPointsToNominalCurve(result.get(), nominalCurves, measuredToNominalTransform, measuredPoints,
+        isUsedInFit, fitParams, mtols, ptols);
+    return result.release();
+}
+
 struct ChordInformation
 {
     Eigen::Vector2d leadingPoint, trailingPoint, leadingCenter, trailingCenter, leadingVector, trailingVector;

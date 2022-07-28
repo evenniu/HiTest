@@ -51,9 +51,8 @@ int CAnalysis::FitSplines()
 	CCurve* lec, * tec, * cvc, * ccc;
 	m_numSuspicious = 0;
 	
-	for (i = 0; i < m_numSect; i++)
-	{
-		double voff = 0.0, uoff = 0.0;
+	for (i = 0; i < m_numSect; i++)//实测截面个数
+	{		
 		double mtle = -1.0, mtte = -1.0;
 		double ler = -1.0, ter = -1.0;
 
@@ -62,6 +61,41 @@ int CAnalysis::FitSplines()
 
 		wchar_t analName[MAXBUFSZ];
 		wcscpy_s(analName, m_sect[i].m_sectName);
+
+		int s;
+		for (s = 0; s < m_pBlade->NumSect(); s++) // loop thru blade sections
+		{
+			wchar_t bladeName[MAXBUFSZ];
+			wcscpy_s(bladeName, m_pBlade->m_section[s]->Name());
+
+			if (wcscmp(m_sect[i].m_sectName, m_pBlade->m_section[s]->Name()) == 0)
+				break;
+		}
+		if (s == m_pBlade->NumSect()) // did not find it
+		{
+			ErrorStruct es(BE_BADSECTION, m_sect[i].m_sectName);
+			m_error->AddError(&es);
+			break;
+		}
+
+		bugout(0, L"Processing data from Section %s", m_pBlade->m_section[s]->Name());
+		double voff = 0.0, uoff = 0.0;
+		//int ts = toleranceSectionIndex(m_pTol, m_sect[i].m_sectName);
+		    
+		/*if(ts >= 0)
+		{
+			voff = 1.5 * m_pTol->m_sect[ts]->m_leChange;
+			uoff = 1.5 * m_pTol->m_sect[ts]->m_teChange;
+		}
+		else
+		{
+			ErrorStruct es(BE_BADSECTION, m_sect[i].m_sectName);
+			m_error->AddError(&es);
+			break;
+		}*/
+			// bugout(3, "to start voff %f uoff %f", voff, uoff);
+
+		CCurve* ncp = m_pBlade->m_section[s]->NomCurve();
 		CCurve* whole = 0;
 		int newPhantomIndexLE = -1;
 		int newPhantomIndexTE = -1;
@@ -151,7 +185,7 @@ int CAnalysis::FitSplines()
 			}
 		}
 		m_pBlade->m_section[i]->MeaCurve(whole);
-		m_pBlade->m_section[i]->NomCurve(whole);
+	//	m_pBlade->m_section[i]->NomCurve(whole);
 
 		t0[LEC] = whole->T0();
 		t1[LEC] = whole->T1();
@@ -161,21 +195,44 @@ int CAnalysis::FitSplines()
 		t1[TEC] = whole->T1();
 		t0[CCC] = period / 2 + period/4;
 		t1[CCC] = period / 2 + period/2;
+
 		tec = new CSubCurve(whole, t0[TEC], t1[TEC], period / 2);
 		tec->Extreme(t1[LEC]);
 
 		cvc = new CSubCurve(whole, t0[CVC], t1[CVC], period);
 		ccc = new CSubCurve(whole, t0[CCC], t1[CCC], period);
+
 		double mcv1[2], mcc0[2];
 		cvc->CalcPoint(mcv1, t1[CVC]);
 		ccc->CalcPoint(mcc0, t0[CCC]);
 
+		double ncv1[2], ncc0[2];
+
+		m_pBlade->m_section[s]->NomPart(CVC)->CalcPoint(ncv1, m_pBlade->m_section[s]->NomPart(CVC)->T1());
+		m_pBlade->m_section[s]->NomPart(CCC)->CalcPoint(ncc0, m_pBlade->m_section[s]->NomPart(CCC)->T0());
+
+		double nomVec[2], meaVec[2];
+		nomVec[0] = ncc0[0] - ncv1[0];
+		nomVec[1] = ncc0[1] - ncv1[1];
+		meaVec[0] = mcc0[0] - mcv1[0];
+		meaVec[1] = mcc0[1] - mcv1[1];
+
+		// these two vectors should be approximately parallel, if they oppose each other, then swap the cvc and ccc curves
+
+		if (dot(nomVec, meaVec) < 0.0)
+		{
+			// wrong choice was made, need to swap the curves
+			CCurve* swap = cvc;
+			cvc = ccc;
+			ccc = swap;
+		}
 
 		m_pBlade->m_section[i]->MeaCurve(whole);
 		m_pBlade->m_section[i]->MeaPart(LEC, lec);
 		m_pBlade->m_section[i]->MeaPart(TEC, tec);
 		m_pBlade->m_section[i]->MeaPart(CVC, cvc);
 		m_pBlade->m_section[i]->MeaPart(CCC, ccc);
+		// create a new mean-camber curve
 
 		CCurve* mcc = NULL;
 		if (mcc)
@@ -294,7 +351,7 @@ Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValu
 bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, double* mtols, double* ptols)
 {
 	bugout(0, L"CalcAlign(): enterdd");
-
+	typ = BladeBestFitType::BestFitNone;
 	CFitParams fp;
 	fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
 	fp.weightcurve[CVC] = 1;
@@ -307,10 +364,71 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 	if (ts < 0)
 		return false;
-	const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(
-		m_pBlade->m_section[bs]->m_mxpt, m_pBlade->m_section[bs]->m_mypt, m_pBlade->m_section[bs]->m_totalPoints);
-	const Eigen::Map<const Eigen::ArrayXi> partOf(m_pBlade->m_section[bs]->m_partOf,m_pBlade->m_section[bs]->m_totalPoints);
+	if (typ == BladeBestFitType::BestFitFullBlade ||
+		typ == BladeBestFitType::BestFitFullBladeLELS) // fitting all sections at once.
+	{
+		if (m_pBestFitSection[r][bfind] >= 0) // calculations already done.
+			return true;
+		int sec1 = -1, sec2 = -1;
+		if (m_pFlavor->m_rootTip[bfind] && m_rootChecked && m_tipChecked && m_rootSect != StackOriginPointGhostSection)
+		{
+			sec1 = m_tipSect;
+			sec2 = m_rootSect;
+		}
+		CBestFit* wholeFit = NULL;
+		if (typ == BladeBestFitType::BestFitFullBlade)
+		{
+			//if (!m_pBlade->FitBlade(&fp, sec1, sec2)) // Perform the fit
+			//	return false;
 
+			//wholeFit = m_pBlade->GetBestFit();
+		}
+		else
+		{
+			fp.fitcurve[CVC] = m_pFlavor->m_useCV[bfind] ? 1 : 0;
+			fp.fitcurve[CCC] = m_pFlavor->m_useCC[bfind] ? 1 : 0;
+			fp.fitcurve[LEC] = 0;
+			fp.fitcurve[TEC] = 0;
+
+			//m_pTol->m_defaultSection.GetLERadii(&fp.leoff1, &fp.leoff2);
+			//if (!m_pBlade->FitBladeLELS(&fp, this)) // Perform the fit
+			//	return false;
+
+			//wholeFit = m_pBlade->GetBestFitLE();
+		}
+
+		// make a copy of the best fit.
+		fp.algorithm = BestFitAlgorithm::None; // no fit
+		fp.fitcurve[CVC] = 1;
+		fp.fitcurve[CCC] = 1;
+		fp.fitcurve[LEC] = 1;
+		fp.fitcurve[TEC] = 1;
+		fp.weightcurve[CVC] = 1;
+		fp.weightcurve[CCC] = 1;
+		fp.weightcurve[LEC] = 1;
+		fp.weightcurve[TEC] = 1;
+		const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(
+			m_pBlade->m_section[bs]->m_mxpt, m_pBlade->m_section[bs]->m_mypt, m_pBlade->m_section[bs]->m_totalPoints);
+		const Eigen::Map<const Eigen::ArrayXi> partOf(m_pBlade->m_section[bs]->m_partOf, m_pBlade->m_section[bs]->m_totalPoints);
+		m_pBlade->m_section[bs]->m_numBestFits++;
+		return true;
+	}
+	if (typ == BladeBestFitType::BestFitNone) // no fit
+	{
+		if (m_pBestFitSection[r][bfind] >= 0)
+			return true;
+
+		fp.algorithm = BestFitAlgorithm::None; // no fit
+		fp.fitcurve[CVC] = 1;
+		fp.fitcurve[CCC] = 1;
+		fp.fitcurve[LEC] = 1;
+		fp.fitcurve[TEC] = 1;
+
+		if (m_pBlade->m_section[bs]->FitPoints(fp, m_pBestFitSection[r][bfind], inchSize(), mtols, ptols))
+			return true;
+
+		return false;
+	}
 /*createMeasuredPointsToNominalCurveBestFit(Hexagon::Blade::nominalSectionCurve(m_pBlade->m_section[bs]),
 			Hexagon::Blade::toIsometry2d(*wholeFit->GetAlign()), measuredPoints,
 			Eigen::ArrayXb::Ones(partOf.size()), fp, mtols, ptols)*/;
@@ -395,6 +513,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 bool CAnalysis::Locate(int r, double* xy, int doingBow)
 {
 	bugout(0, L"Locate(): enterdd");
+	int bs = m_pBSect[r];
 	int ts = 0;// toleranceSectionIndex(m_pTol, m_pBlade->m_section[bs]->Name()); // index into m_pTol->Sect;
 
 	for (int bfind = 0; bfind < MAXFITS; bfind++)
@@ -433,7 +552,8 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 			continue;
 		if (CalcAlign(r, m_pFlavor->m_fitType[bfind], doingBow, bfind, mtols, ptols))
 		{
-
+			bugout(0, L"Locate: after CalcAlign, will cal GetBestFitV1");
+			//* thisFit = m_pBlade->m_section[bs]->GetBestFitV1(m_pBestFitSection[r][bfind]);
 		}
 		//if (CalcAlign(r, m_pFlavor->m_fitType[bfind], doingBow, bfind, mtols, ptols))
 		//{

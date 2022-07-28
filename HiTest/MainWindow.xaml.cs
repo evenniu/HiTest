@@ -33,7 +33,13 @@ namespace HiTest
             
             ImportSimleDLL.TestMatrix(10);
             ImportSimleDLL.Calculate(plainText);
-            //ImportSimleDLL.Release();
+            
+
+        }
+
+        private void Win_closed(object sender, EventArgs e)
+        {
+            ImportSimleDLL.Release();
         }
     }
 }

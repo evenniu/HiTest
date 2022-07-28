@@ -110,10 +110,12 @@ public: // as part of the big push to the dll, this was changed from public to p
 	double m_areaEndPoint[3][2];   //开口区域终止点坐标
 	int    m_areaIndex[3][2];      //开口区域起始-终止点索引
 	int m_numBestFits;
+	CBestFit* m_bestFits[100]; // array of best fits computed
 	int m_fixedAxis;           //坐标轴固定: 0-X; 1-Y; 2-Z
 public:
 	bool m_notEnoughToleranced;
-
+	CBestFit* GetBestFit(int index);
+	CBestFit* GetBestFitV1(int index);
 	//CCompRecordArray* m_compArray;
 
 	CSection();

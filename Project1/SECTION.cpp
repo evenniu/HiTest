@@ -363,11 +363,11 @@ double minMaxObjective(const CBestFit& bf, const CFitParams& fitParams)
     return *std::max_element(objectives.begin(), objectives.end());
 }
 void updateBestFit_measuredPointsToNominalCurve(CBestFit* bf, const Hexagon::Blade::SectionCurve& nominalCurves,
-    const Eigen::Isometry2d& measuredToNominalTransform,
-    const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
-    const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
-    const CFitParams& fitParams, double* mtols = nullptr,
-    double* ptols = nullptr)
+                                                const Eigen::Isometry2d& measuredToNominalTransform,
+                                                const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
+                                                const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
+                                                const CFitParams& fitParams, double* mtols = nullptr,
+                                                double* ptols = nullptr)
 {
     // figure out the closest nominal points
     const ptrdiff_t N = measuredPoints.cols();
@@ -389,14 +389,53 @@ void updateBestFit_measuredPointsToNominalCurve(CBestFit* bf, const Hexagon::Bla
     fittedBestPartOf =
         Hexagon::Blade::tIsInSubcurve_eigen(nominalT, *nominalCurves.leading, nominalCurves.whole->period())
         .select(LEC, fittedBestPartOf);
+
+    // construct the result
+    for (int i = 0; i < N; i++)
+    {
+        bf->PutVal(i, measuredPoints(0, i), measuredPoints(1, i));
+        bf->PutNom(i, nominalPoints(0, i), nominalPoints(1, i));
+        bf->PutT(i, nominalT[i]);
+        bf->PutVec(i, ijk(0, i), ijk(1, i));
+        bf->PutInf(i, alignedMeasuredPoints(0, i), alignedMeasuredPoints(1, i));
+        bf->m_bestPartOf[i] = fittedBestPartOf[i];
+        bf->m_valWasUsedInFit[i] = isUsedInFit[i];
+    }
+
+    // add the summaries
+    bf->m_totalBad = 0;
+    bf->m_totalChecked = 0;
+    for (int side = 0; side < 4; side++)
+    {
+        const Eigen::ArrayXd sideDeviations = Hexagon::Blade::sliceVector(distances, fittedBestPartOf == side);
+        if (sideDeviations.size() > 0)
+        {
+            bf->m_mindev[side] = sideDeviations.minCoeff();
+            bf->m_maxdev[side] = sideDeviations.maxCoeff();
+            bf->m_meandev[side] = sideDeviations.mean();
+        }
+        if (sideDeviations.size() > 1)
+        {
+            bf->m_stddev[side] = std::sqrt((sideDeviations - sideDeviations.mean()).cwiseAbs2().sum() /
+                static_cast<double>(sideDeviations.size() - 1));
+        }
+        if (mtols && ptols)
+        {
+            bf->m_totalChecked += static_cast<int>(sideDeviations.size());
+            bf->m_totalBad += static_cast<int>((sideDeviations < mtols[side] && sideDeviations > ptols[side]).count());
+        }
+    }
+    // add the transformation as well
+    bf->m_align = Hexagon::Blade::toCAlignment(measuredToNominalTransform);
+    bf->m_fitParams = fitParams;
 }
 
 CBestFit* createMeasuredPointsToNominalCurveBestFit(const Hexagon::Blade::SectionCurve& nominalCurves,
-    const Eigen::Isometry2d& measuredToNominalTransform,
-    const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
-    const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
-    const CFitParams& fitParams, double* mtols = nullptr,
-    double* ptols = nullptr)
+                                                    const Eigen::Isometry2d& measuredToNominalTransform,
+                                                    const Eigen::Ref<const Eigen::Matrix2Xd>& measuredPoints,
+                                                    const Eigen::Ref<const Eigen::ArrayXb>& isUsedInFit,
+                                                    const CFitParams& fitParams, double* mtols = nullptr,
+                                                    double* ptols = nullptr)
 {
     auto result = std::make_unique<CBestFit>(static_cast<int>(measuredPoints.cols()));
     updateBestFit_measuredPointsToNominalCurve(result.get(), nominalCurves, measuredToNominalTransform, measuredPoints,
@@ -590,17 +629,30 @@ double findNearestTValue(CCurve* curve, const TreeType& tree, ptrdiff_t numberOf
 /// <returns></returns>
 bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mtols, double* ptols)
 {
-   // const auto sectionCurve = 0;// Hexagon::Blade::nominalSectionCurve(this);
+    const auto sectionCurve =Hexagon::Blade::nominalSectionCurve(this);
     const Eigen::Matrix2Xd measuredPoints = constructPointMatrix(m_mxpt, m_mypt, m_totalPoints);
     bugout(0, L"FitPoints:m_totalPoints(%d) entered ****", m_totalPoints);
-    //for (const auto side : { LEC, TEC })
-    //{
-    //    if (fp.weightcurve[side] == 0)
-    //    {
-    //        fp.fitcurve[side] = 0;
-    //    }
-    //}
+    for (const auto side : { LEC, TEC })
+    {
+        if (fp.weightcurve[side] == 0)
+        {
+            fp.fitcurve[side] = 0;
+        }
+    }
     const Eigen::Map<const Eigen::ArrayXi> partOf(m_partOf, m_totalPoints);
+    // no fit
+    if (fp.algorithm == BestFitAlgorithm::None)
+    {
+        index = m_numBestFits;
+        
+            createMeasuredPointsToNominalCurveBestFit(sectionCurve, Eigen::Isometry2d::Identity(), measuredPoints,
+                Eigen::ArrayXb::Ones(m_totalPoints), fp, mtols, ptols);
+        m_numBestFits++;
+        bugout(0, L"FitPoints:entered * m_numBestFits=%d ***", m_numBestFits);
+
+        return true;
+    }
+
     ChordInformation nominalChordInfo;
     if (!Chord(0, nominalChordInfo.leadingPoint.data(), nominalChordInfo.trailingPoint.data(),
         nominalChordInfo.leadingCenter.data(), nominalChordInfo.trailingCenter.data(),
@@ -1105,3 +1157,19 @@ void CSection::ResetCurves()
     m_meaPitch[2] = m_nomPitch[2] = -1.0;
 }
 
+CBestFit* CSection::GetBestFit(int index)
+{
+    CBestFit* bestfit = NULL;
+    if (index >= 0 && index < m_numBestFits)
+        bestfit = m_bestFits[index];
+    bestfit = m_bestFits[0];
+    return bestfit;
+}
+
+CBestFit* CSection::GetBestFitV1(int index)
+{
+    CBestFit* bestfit = NULL;
+    // if(index >= 0 && index < m_numBestFits)
+    bestfit = m_bestFits[0];
+    return bestfit;
+}

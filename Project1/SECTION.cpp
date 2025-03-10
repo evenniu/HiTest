@@ -6,7 +6,7 @@
 #include "SmallestCircle.h"
 #include "SECTION.h"
 #include "SectionCurve.h"
-//#include "BestFits.h"
+#include "BestFits.h"
 #include "ArraySlicing.h"
 #include "HermiteCurve.h"
 #include "EigenAbstractCurve.h"
@@ -16,16 +16,10 @@
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4100)
-#include <nanoflann/nanoflann.hpp>
 #pragma warning(pop)
 
 #include "CurvePolygon.h"
 #include "MeanCamberCurve.h"
-#include <HexagonGDT/MathTypes.h>
-#include <HexagonGDT/FitProfile.h>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/detail/sha1.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 using namespace Hexagon;
 
 #ifdef _DEBUG
@@ -348,7 +342,8 @@ Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValu
 }
 double minMaxObjective(const CBestFit& bf, const CFitParams& fitParams)
 {
-    std::vector<double> objectives;
+    return 0;
+    /*std::vector<double> objectives;
     for (int side = 0; side < 4; side++)
     {
         if (fitParams.fitcurve[side] && fitParams.weightcurve[side] > 0.0)
@@ -360,7 +355,7 @@ double minMaxObjective(const CBestFit& bf, const CFitParams& fitParams)
     {
         return 0.0;
     }
-    return *std::max_element(objectives.begin(), objectives.end());
+    return *std::max_element(objectives.begin(), objectives.end());*/
 }
 void updateBestFit_measuredPointsToNominalCurve(CBestFit* bf, const Hexagon::Blade::SectionCurve& nominalCurves,
                                                 const Eigen::Isometry2d& measuredToNominalTransform,
@@ -700,7 +695,7 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
 
     if (fp.algorithm == BestFitAlgorithm::LeastSquares)
     {
-        //auto fitTransform =TestcomputeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options, linearDeviations1, inchSize);
+       // auto fitTransform =TestcomputeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options, linearDeviations1, inchSize);
     }
     return true;
 }
@@ -1078,7 +1073,6 @@ double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d&
         (Hexagon::Blade::makeRotate90() * (endPoints.col(1) - endPoints.col(0))).normalized();
     return computeCurveLineIntersectionT(curve, midPoint, crossLineDirection);
 }
-
 //»±…ŸBestFits.h
 //std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
 //    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,

@@ -37,10 +37,19 @@ namespace MyApp
 		return a - b;
 	}
 
+	void FUNClass::GetFun(int* res, int size)
+	{
+		for (int i = 0;i < size; i++)
+		{
+			res[i] = i * 3;
+		}
+		// 在这里进行计算，并将结果存储在 data 数组中
+	}
+
 	/* return a * b */
 	double FUNClass::Multiply(double a, double b)
 	{
-		return a * b + 1;
+		return a * b;
 	}
 	double FUNClass::Divide(double a, double b)
 	{

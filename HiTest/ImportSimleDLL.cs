@@ -9,9 +9,10 @@ namespace HiTest
 {
     public static class ImportSimleDLL
     {
-        const string DLLPath = @"Project1.dll";
+        const string DLLPath = @"Blademath.dll";
         [DllImport(DLLPath, EntryPoint = "CreateSimple", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.None)]
         public static extern void CreateSimple();
+
         [DllImport(DLLPath, EntryPoint = "Add", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern int Add(int x, int z, ref int sum);
 
@@ -19,14 +20,21 @@ namespace HiTest
         public static extern double Divide(double a, double b);
 
         [DllImport(DLLPath, EntryPoint = "Multiply", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
-        public static extern int Multiply(double a, double b);
+        public static extern double Multiply(double a, double b);
 
         [DllImport(DLLPath, EntryPoint = "TestMatrix", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern void TestMatrix(int np);
+
         [DllImport(DLLPath, EntryPoint = "Calculate", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern void Calculate([MarshalAs(UnmanagedType.LPTStr)] string plaintext);
 
         [DllImport(DLLPath, EntryPoint = "Release", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern void Release();//释放
+
+        [DllImport(DLLPath, EntryPoint = "GetFunc", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void GetFunc(int[] resultArray, int arraySize);        
+        
+        [DllImport(DLLPath, EntryPoint = "GetSecNum", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void GetSecNum(int[] resultArray, ref int size);
     }
 }

@@ -46,3 +46,24 @@ extern "C" __declspec(dllexport) void Release()
 		g_pSimple = NULL;
 	}
 }
+
+void GetFunc(int* res, int size)
+{
+	int numSect = g_pSimple->m_cAnalysisFile->m_analysis->m_numSect;
+	for (int s = 0; s < size; s++)
+	{
+		res[s] = s;
+	}
+}
+
+void GetSecNum(int* res, int& size)
+{
+	if (g_pSimple->m_cAnalysisFile)
+	{
+		size = 5;// g_pSimple->m_cAnalysisFile->m_analysis->m_numSect;
+		for (int s = 0; s < size; s++)
+		{
+			res[s] = s * 2;
+		}
+	}
+}

@@ -15,14 +15,14 @@ namespace MyApp
 		bool g_allowOverride;
 		AES* m_aes;
 		CMatrix* m_noms;
+	public:		
 		CAnalysisFile* m_cAnalysisFile;
-	public:
 		FUNClass(void);
 		~FUNClass(void);
 		int Add(int a, int b, int& sum);
 		int Add1(int a, int b);
 		int Subtract(int a, int b);
-
+		void GetFun(int * res,int size);
 		/* return a * b */
 		double Multiply(double a, double b);
 		double Divide(double a, double b);

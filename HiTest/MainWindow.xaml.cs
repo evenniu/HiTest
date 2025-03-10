@@ -28,12 +28,23 @@ namespace HiTest
             ImportSimleDLL.CreateSimple();
             int iResult = ImportSimleDLL.Add(10, 3, ref sum);
             double d2 = ImportSimleDLL.Divide(10.0, 3.0);
-            iResult = ImportSimleDLL.Multiply(10, 10);
+            double m1 = ImportSimleDLL.Multiply(10, 10);
             string plainText = "12d33qwe";
             
             ImportSimleDLL.TestMatrix(10);
             ImportSimleDLL.Calculate(plainText);
-            
+            int arraySize = 5;
+            int[] resultArray = new int[arraySize];
+            ImportSimleDLL.GetFunc(resultArray, arraySize);
+            int numsect = 5;
+            ImportSimleDLL.GetSecNum(resultArray,ref numsect);
+            // 访问resultArray中的数据
+            for (int i = 0; i < arraySize; i++)
+            {
+                Console.WriteLine(resultArray[i]);
+            }
+            ImportSimleDLL.Release();
+
 
         }
 

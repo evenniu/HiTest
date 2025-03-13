@@ -103,33 +103,7 @@ int CAnalysis::FitSplines()
 		double dddd = whole->ClosestPoint(np, dummy, &nbt, tp, 0.0, 0.0, 400);
 		start[LEC] = start[TEC] = -1;
 		end[LEC] = end[TEC] = -1;
-		int noseClosest = 0, tailClosest = 0; // save indices that are closest to ends
-		int lePartial = 0, tePartial = 0;
-		
 
-
-
-		double voff2 = -1.0;
-		double uoff2 = -1.0;
-
-	
-	
-		double nvec[2], tvec[2];
-		normalize(nvec, m_sect[i].m_nose);
-		normalize(tvec, m_sect[i].m_tail);
-		double origin[2] = { 0.0, 0.0 };
-		for (int q = 0; q < m_sect[i].m_numPoints; q++)
-		{
-			if (!lePartial)
-			{
-				d = _hypot(m_sect[i].m_nose[0] - m_sect[i].x[q], m_sect[i].m_nose[1] - m_sect[i].y[q]);
-				if (d < minNose)
-				{
-					minNose = d;
-					noseClosest = q;
-				}
-			}
-		}
 		m_pBlade->m_section[i]->MeaCurve(whole);
 
 		t0[LEC] = whole->T0();
@@ -153,7 +127,6 @@ int CAnalysis::FitSplines()
 		m_pBlade->m_section[i]->MeaPart(TEC, tec);
 		m_pBlade->m_section[i]->MeaPart(CVC, cvc);
 		m_pBlade->m_section[i]->MeaPart(CCC, ccc);
-		// create a new mean-camber curve
 
 		CCurve* mcc = NULL;
 		if (mcc)

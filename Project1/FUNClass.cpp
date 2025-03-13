@@ -90,6 +90,49 @@ namespace MyApp
 			return;
 		}
 	}
+	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints)
+	{
+		if (numpoints <5)
+		{
+			return false;
+		}  
+		
+		CAnalysis* analysis = m_cAnalysisFile->m_analysis;
+		int n = numpoints;
+		m_cAnalysisFile->m_pFlavorFile = new FlavorFile();//CFlavorFile
+		analysis->m_pFlavor = m_cAnalysisFile->m_pFlavorFile->m_flav;
+		analysis->m_numSect = 1;
+		int id = 0;
+		analysis->m_sect = new CAnalysisSect[m_cAnalysisFile->m_analysis->m_numSect];
+		analysis->m_sect[id].m_numPoints = numpoints;
+		analysis->m_sect[id].numberOfBallCenters = numpoints;
+		analysis->m_sect[id].x = new double[n];
+		analysis->m_sect[id].y = new double[n];
+		analysis->m_sect[id].z = new double[n];
+		analysis->m_sect[id].ox = new double[n];
+		analysis->m_sect[id].oy = new double[n];
+		analysis->m_sect[id].oz = new double[n];
+		analysis->m_sect[id].i = new double[n];
+		analysis->m_sect[id].j = new double[n];
+		analysis->m_sect[id].oi = new double[n];
+		analysis->m_sect[id].oj = new double[n];
+		analysis->m_sect[id].ballCenterX = new double[n];
+		analysis->m_sect[id].ballCenterY = new double[n];
+		analysis->m_sect[id].ballCenterZ = new double[n];
+		for (int i = 0; i < numpoints; i++)
+		{
+			analysis->m_sect[id].x[i] = measxyzijk[i][0];
+			analysis->m_sect[id].y[i] = measxyzijk[i][1];
+			analysis->m_sect[id].z[i] = measxyzijk[i][2];
+			analysis->m_sect[id].ox[i] = measxyzijk[i][0];
+			analysis->m_sect[id].oy[i] = measxyzijk[i][1];
+			analysis->m_sect[id].oz[i] = measxyzijk[i][2];
+			analysis->m_sect[id].i[i] = measxyzijk[i][3];
+			analysis->m_sect[id].j[i] = measxyzijk[i][4];
+
+		} 
+		analysis->FitSplines();
+	}
 }
 
 

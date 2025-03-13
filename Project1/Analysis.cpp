@@ -43,7 +43,10 @@ int CAnalysis::FitSplines()
 {
 	int i;
 	bugout(0, L"FitSplines:Processing analysis file");
-
+	if (!m_pBlade)
+	{
+		return 0;
+	}
 	for (i = 0; i < m_pBlade->NumSect(); i++)
 		m_pBlade->m_section[i]->ResetCurves();
 
@@ -82,18 +85,6 @@ int CAnalysis::FitSplines()
 		double voff = 0.0, uoff = 0.0;
 		//int ts = toleranceSectionIndex(m_pTol, m_sect[i].m_sectName);
 		    
-		/*if(ts >= 0)
-		{
-			voff = 1.5 * m_pTol->m_sect[ts]->m_leChange;
-			uoff = 1.5 * m_pTol->m_sect[ts]->m_teChange;
-		}
-		else
-		{
-			ErrorStruct es(BE_BADSECTION, m_sect[i].m_sectName);
-			m_error->AddError(&es);
-			break;
-		}*/
-			// bugout(3, "to start voff %f uoff %f", voff, uoff);
 
 		CCurve* ncp = m_pBlade->m_section[s]->NomCurve();
 		CCurve* whole = 0;

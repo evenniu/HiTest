@@ -67,3 +67,12 @@ void GetSecNum(int* res, int& size)
 		}
 	}
 }
+
+bool LoadPoint(double** meas, int numpoint)
+{
+	if (g_pSimple)
+	{
+		return g_pSimple->ReadData(meas, numpoint);
+	}
+	return false;
+}

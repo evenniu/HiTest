@@ -35,6 +35,8 @@ namespace HiTest
         public static extern void GetFunc(int[] resultArray, int arraySize);        
         
         [DllImport(DLLPath, EntryPoint = "GetSecNum", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
-        public static extern void GetSecNum(int[] resultArray, ref int size);
+        public static extern void GetSecNum(int[] resultArray, ref int size);        
+        [DllImport(DLLPath, EntryPoint = "LoadPoint", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern bool LoadPoint(IntPtr measPoints,  int numpoints);
     }
 }

@@ -8,7 +8,7 @@
 
 #define MAXBUFSZ 1000
 
-DLLEXPORT  unsigned int myGetProfileInt(wchar_t *lpszEntry, int nDefault );
+DLLEXPORT  unsigned int myGetProfileInt(const wchar_t *lpszEntry, int nDefault );
 DLLEXPORT void myGetProfileString(wchar_t *lpszEntry, wchar_t *returnValue, wchar_t *defaultValue );
 DLLEXPORT double myGetProfileDouble(wchar_t *lpszEntry, double dDefault);
 DLLEXPORT bool IsCustomerID(wchar_t *id);

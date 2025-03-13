@@ -8,7 +8,7 @@
    #endif
 #endif  // _DEBUG
 
-unsigned int myGetProfileInt(wchar_t *lpszEntry, int nDefault)
+unsigned int myGetProfileInt(const wchar_t *lpszEntry, int nDefault)
 {
   int rv = nDefault;
 

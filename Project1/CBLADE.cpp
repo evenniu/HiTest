@@ -251,6 +251,31 @@ bool CBlade::ReadFile(FILE* fp)
     }
     return true;
 }
+bool CBlade::ReadNomdata(int npts,double* xv,double* yv,double* kv)
+{
+    int nomfixdat = myGetProfileInt(L"NominalRemove", 0) == 0 ? FALSE : TRUE;
+    int nomtension = myGetProfileInt(L"NominalTension", 0) == 0 ? FALSE : TRUE;
+    int i;
+    m_numSections = 1;
+    m_section = new CSection * [m_numSections];
+    CSection* sect = new CSection;
+    for (i = 0; i < m_numSections; i++)
+    {
+        CCurve* whole = 0;
+        CSection* sect = new CSection;
+        m_section[i] = sect; 
+        m_section[i]->m_nomCurve = new CNurbCurve(npts, xv, yv, kv, m_english, 0, nomtension, nomfixdat);
+        whole = m_section[i]->m_nomCurve;
+        double period = whole->T1() - whole->T0();
+        m_section[i]->m_nomPart[CVC] = new CSubCurve(whole, whole->T0(), whole->T1(), period );
+        m_section[i]->m_nomPart[CCC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        m_section[i]->m_nomPart[LEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        m_section[i]->m_nomPart[TEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+    }
+
+
+    return false;
+}
 // as of November 2017, these are defined in SECTION.CPP
 Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n);
 

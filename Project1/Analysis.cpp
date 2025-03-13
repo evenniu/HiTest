@@ -62,41 +62,19 @@ int CAnalysis::FitSplines()
 		if (m_sect[i].m_numPoints < 10) // trail trim problem or ???
 			continue;
 
-		wchar_t analName[MAXBUFSZ];
-		wcscpy_s(analName, m_sect[i].m_sectName);
 
-		int s;
-		for (s = 0; s < m_pBlade->NumSect(); s++) // loop thru blade sections
-		{
-			wchar_t bladeName[MAXBUFSZ];
-			wcscpy_s(bladeName, m_pBlade->m_section[s]->Name());
-
-			if (wcscmp(m_sect[i].m_sectName, m_pBlade->m_section[s]->Name()) == 0)
-				break;
-		}
-		if (s == m_pBlade->NumSect()) // did not find it
-		{
-			ErrorStruct es(BE_BADSECTION, m_sect[i].m_sectName);
-			m_error->AddError(&es);
-			break;
-		}
-
-		bugout(0, L"Processing data from Section %s", m_pBlade->m_section[s]->Name());
-		double voff = 0.0, uoff = 0.0;
 		//int ts = toleranceSectionIndex(m_pTol, m_sect[i].m_sectName);
 		    
-
+		int s = 0;
 		CCurve* ncp = m_pBlade->m_section[s]->NomCurve();
 		CCurve* whole = 0;
-		int newPhantomIndexLE = -1;
-		int newPhantomIndexTE = -1;
 		whole =new CNurbCurve(m_sect[i].m_numPoints, m_sect[i].x, m_sect[i].y, 0, true, 0, 1, 1, 0.0, 0, 0, 0, 2.0, true);
 		if(!whole)
 		{
 			return 0;
 		}
-		t0[0] = whole->T0();
-		t1[0] = whole->T1();
+		t0[CVC] = whole->T0();
+		t1[CVC] = whole->T1();
 		double xxx[2];
 
 		double period = whole->T1() - whole->T0();
@@ -128,37 +106,14 @@ int CAnalysis::FitSplines()
 		int noseClosest = 0, tailClosest = 0; // save indices that are closest to ends
 		int lePartial = 0, tePartial = 0;
 		
-		if (newPhantomIndexLE > 0 && m_pBlade->m_section[i]->LEType() == EDGE_PARTIAL)
-		{
-			lePartial = 1;
-			// so these points will be assigned to CV and CC side
-			start[LEC] = newPhantomIndexLE + 1;
-			end[LEC] = newPhantomIndexLE;
-		}
 
-		if (newPhantomIndexTE > 0 && m_pBlade->m_section[i]->TEType() == EDGE_PARTIAL)
-		{
-			tePartial = 1;
-			// so these points will be assigned to CV and CC side
-			start[TEC] = newPhantomIndexTE + 1;
-			end[TEC] = newPhantomIndexTE;
-		}
 
-		//if (!m_pFlavor->m_fromStack && m_pTol->m_sect[ts]->m_leChange > 0.0)
-		//	voff = 1.5 * m_pTol->m_sect[ts]->m_leChange; // tie these back to the tol file.
-
-	/*	if (!m_pFlavor->m_fromStack && m_pTol->m_sect[ts]->m_teChange > 0.0)
-			uoff = 1.5 * m_pTol->m_sect[ts]->m_teChange;*/
 
 		double voff2 = -1.0;
 		double uoff2 = -1.0;
 
-		//if (m_pFlavor->m_fromStack && m_pTol->m_sect[ts]->m_leChange > 0.0)
-		//	voff2 = m_pTol->m_sect[ts]->m_leChange; // tie these back to the tol file.
-
-		//if (m_pFlavor->m_fromStack && m_pTol->m_sect[ts]->m_teChange > 0.0)
-		//	uoff2 = m_pTol->m_sect[ts]->m_teChange;
-		//
+	
+	
 		double nvec[2], tvec[2];
 		normalize(nvec, m_sect[i].m_nose);
 		normalize(tvec, m_sect[i].m_tail);
@@ -176,7 +131,6 @@ int CAnalysis::FitSplines()
 			}
 		}
 		m_pBlade->m_section[i]->MeaCurve(whole);
-	//	m_pBlade->m_section[i]->NomCurve(whole);
 
 		t0[LEC] = whole->T0();
 		t1[LEC] = whole->T1();
@@ -193,30 +147,6 @@ int CAnalysis::FitSplines()
 		cvc = new CSubCurve(whole, t0[CVC], t1[CVC], period);
 		ccc = new CSubCurve(whole, t0[CCC], t1[CCC], period);
 
-		double mcv1[2], mcc0[2];
-		cvc->CalcPoint(mcv1, t1[CVC]);
-		ccc->CalcPoint(mcc0, t0[CCC]);
-
-		double ncv1[2], ncc0[2];
-
-		m_pBlade->m_section[s]->NomPart(CVC)->CalcPoint(ncv1, m_pBlade->m_section[s]->NomPart(CVC)->T1());
-		m_pBlade->m_section[s]->NomPart(CCC)->CalcPoint(ncc0, m_pBlade->m_section[s]->NomPart(CCC)->T0());
-
-		double nomVec[2], meaVec[2];
-		nomVec[0] = ncc0[0] - ncv1[0];
-		nomVec[1] = ncc0[1] - ncv1[1];
-		meaVec[0] = mcc0[0] - mcv1[0];
-		meaVec[1] = mcc0[1] - mcv1[1];
-
-		// these two vectors should be approximately parallel, if they oppose each other, then swap the cvc and ccc curves
-
-		if (dot(nomVec, meaVec) < 0.0)
-		{
-			// wrong choice was made, need to swap the curves
-			CCurve* swap = cvc;
-			cvc = ccc;
-			ccc = swap;
-		}
 
 		m_pBlade->m_section[i]->MeaCurve(whole);
 		m_pBlade->m_section[i]->MeaPart(LEC, lec);
@@ -228,37 +158,8 @@ int CAnalysis::FitSplines()
 		CCurve* mcc = NULL;
 		if (mcc)
 			delete mcc;
-		Hexagon::Blade::MeanCamberCurveParameters mccParams;
-		mccParams.section = m_pBlade->m_section[i];
-		mccParams.analysisSection = &(m_sect[i]);
-		mccParams.flavor = m_pFlavor;
-		mccParams.ler = ler;
-		mccParams.ter = ter;
-		mccParams.uoff = uoff;
-		mccParams.voff = voff;
-		mccParams.mtle = mtle;
-		mccParams.mtte = mtte;
-		const bool isEnglish = true;//ccc->IsEnglish();
-		Hexagon::Blade::MeanCamberResult meanCamberResult;
-		try
-		{
-			meanCamberResult = Hexagon::Blade::createMeasuredMeanCamberCurve(mccParams, isEnglish);
-		}
-		catch (...)
-		{
-			std::wstring errorSection = L"measured section " + std::wstring(m_sect[i].m_sectName);
-			ErrorStruct es(BE_MEANCAMBERFAILED, errorSection.c_str());
-			m_error->AddError(&es);
-			break;
-		}
-		mcc = meanCamberResult.meanCamberCurve;
-		//if (!mcc->Valid())
-		//{
-		//	delete mcc;
-		//	/* ErrorStruct es(BE_MEANCAMBERFAILED, m_sect[i].m_sectName);
-		//	 m_error->AddError(&es);*/
-		//	 // return 1;
-		//}
+		
+
 		m_pBlade->m_section[i]->AssignPoints(m_sect[i].x, m_sect[i].y, m_sect[i].m_numPoints, start, end);
 
 	}

@@ -98,6 +98,8 @@ namespace MyApp
 		}  
 		
 		CAnalysis* analysis = m_cAnalysisFile->m_analysis;
+		analysis->m_pBlade = new CBlade();
+		
 		int n = numpoints;
 		m_cAnalysisFile->m_pFlavorFile = new FlavorFile();//CFlavorFile
 		analysis->m_pFlavor = m_cAnalysisFile->m_pFlavorFile->m_flav;
@@ -119,6 +121,7 @@ namespace MyApp
 		analysis->m_sect[id].ballCenterX = new double[n];
 		analysis->m_sect[id].ballCenterY = new double[n];
 		analysis->m_sect[id].ballCenterZ = new double[n];
+		double* kval = new double[n];
 		for (int i = 0; i < numpoints; i++)
 		{
 			analysis->m_sect[id].x[i] = measxyzijk[i][0];
@@ -129,8 +132,14 @@ namespace MyApp
 			analysis->m_sect[id].oz[i] = measxyzijk[i][2];
 			analysis->m_sect[id].i[i] = measxyzijk[i][3];
 			analysis->m_sect[id].j[i] = measxyzijk[i][4];
-
-		} 
+			kval[i] = 0;
+		}       
+		
+		analysis->m_pBlade->ReadNomdata(numpoints, analysis->m_sect[id].x, analysis->m_sect[id].y,kval);
+		if (kval)
+		{
+			delete[] kval;
+		}
 		analysis->FitSplines();
 	}
 }

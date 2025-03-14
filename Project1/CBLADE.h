@@ -63,5 +63,6 @@ public:
 
 	bool ReadFile(FILE* fp);
 	bool ReadNomdata(int npts,int cols, double** xyzijk);
+	bool NormalReorderPoints(int npts,double** m,CSection* sect, bool havek, bool havetol);
 };
 

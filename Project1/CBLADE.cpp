@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "HermiteCurve.h"
 #include "MeanCamberCurve.h"
-//#include "BestFits.h"
+#include "BestFits.h"
 #include "SectionCurve.h"
 #include "ArraySlicing.h"
 #include "EigenAbstractCurve.h"
@@ -253,8 +253,6 @@ bool CBlade::ReadFile(FILE* fp)
 }
 bool CBlade::ReadNomdata(int npts,int col, double** xyzijk)
 {
-    int nomfixdat = myGetProfileInt(L"NominalRemove", 0) == 0 ? FALSE : TRUE;
-    int nomtension = myGetProfileInt(L"NominalTension", 0) == 0 ? FALSE : TRUE;
     int s;
     m_numSections = 1;
     int numPts;
@@ -290,35 +288,10 @@ bool CBlade::ReadNomdata(int npts,int col, double** xyzijk)
             havek = false;
             haveTol = true;
         }
-        for (int i = 0; i < numPts; i++)
-        {
-            double xyijk[5]; 
-            xVal[i] = xyzijk[i][0];
-            yVal[i] = xyzijk[i][1];
-            xyijk[0] = xVal[i];
-            xyijk[1] = yVal[i];
-            if (havek)
-            {
-                xyijk[2] = xyzijk[i][3];
-                xyijk[3] = xyzijk[i][4];
-                xyijk[4] = xyzijk[i][5];
-            }
-  
-            sect->AddNomXYIJK(i, xyijk);
+        NormalReorderPoints(numPts,xyzijk, sect, havek, haveTol);
 
-            double tolerances[2];
-            if (haveTol)
-            {
-                tolerances[0] = xyzijk[i][6];
-                tolerances[1] = xyzijk[i][7];
-                sect->AddTol(i, tolerances);
-            }
-            
-            kv[i] = 0;
-            
-        }
+        
         m_section[s] = sect; 
-        m_section[s]->m_nomCurve = new CNurbCurve(numPts, xVal, yVal, kv, m_english, 0, nomtension, nomfixdat);
         whole = m_section[s]->m_nomCurve;
         double period = whole->T1() - whole->T0();
         m_section[s]->m_nomPart[CVC] = new CSubCurve(whole, whole->T0(), whole->T1(), period );
@@ -332,6 +305,104 @@ bool CBlade::ReadNomdata(int npts,int col, double** xyzijk)
 
 
     return false;
+}
+bool CBlade::NormalReorderPoints(int npts,double** m, CSection *sect, bool havek, bool havetol)
+{
+    int nomfixdat = myGetProfileInt(L"NominalRemove", 0) == 0 ? FALSE : TRUE;
+    int nomtension = myGetProfileInt(L"NominalTension", 0) == 0 ? FALSE : TRUE;
+    int cw = 0;
+    double* tmpX, * tmpY;
+    tmpX = new double[npts];
+    tmpY = new double[npts];
+    for (int k = 0; k < npts; k++)
+    {
+        tmpX[k] = m[k][0];
+        tmpY[k] = m[k][1];
+    }
+    if (havek)
+    {
+        double ij[2], tp[2];
+        double nomPoiOrgij[2]; int Drectcount = 0;
+        for (int k = 0; k < npts - 1; k++)
+        {
+            tp[0] = tmpX[k + 1] - tmpX[k];
+            tp[1] = tmpY[k + 1] - tmpY[k];
+            ij[0] = tp[1];
+            ij[1] = -tp[0];
+            normalize(ij, ij);
+            nomPoiOrgij[0] = m[k][3];
+            nomPoiOrgij[1] = m[k][4];
+            normalize(nomPoiOrgij, nomPoiOrgij);
+            if (dot(ij, nomPoiOrgij) < 0)
+            {
+                Drectcount++;
+            }
+            // bugout(0, L"NormalReorderPoints:check tan* nomPoiOrgij =%d ", dot(ij, nomPoiOrgij)>0);
+        }
+        if (Drectcount >npts / 2)
+        {
+            cw = 1;
+        }
+    }
+    else
+    {
+        int numberOfPoints = npts;
+        Eigen::Matrix2Xd polygon(2, numberOfPoints);
+        
+        polygon.row(0) = Eigen::Map<const Eigen::VectorXd>(tmpX, numberOfPoints);
+        polygon.row(1) = Eigen::Map<const Eigen::VectorXd>(tmpY, numberOfPoints);
+
+        // all done
+        //cw = Hexagon::Blade::signedArea(polygon) < 0.0;
+    }
+
+    delete[] tmpX;
+    delete[] tmpY;
+
+    int j = 0; 
+    int zeroindex = 0;
+    double* xVal = new double[npts];
+    double* yVal = new double[npts];
+    double* kv = new double[npts];
+    for (int i = 0; i < npts; i++)
+    {
+        if (cw)
+            j = (npts - 1 + zeroindex - i) % npts;
+        else
+            j = (npts - zeroindex + i) % npts;
+
+
+        double xyijk[5];
+        xVal[j] = m[i][0];
+        yVal[j] = m[i][1];
+
+        xyijk[0] = m[i][0];
+        xyijk[1] = m[i][1];
+        if (havek)
+        {
+            xyijk[2] = m[i][3];
+            xyijk[3] = m[i][4];
+            xyijk[4] = m[i][5];
+        }
+
+        sect->AddNomXYIJK(j, xyijk);
+
+        double tolerances[2];
+        if (havetol)
+        {
+            tolerances[0] = m[i][6];
+            tolerances[1] = m[i][7];
+            sect->AddTol(j, tolerances);
+        }
+
+        kv[j] = 0;
+
+    }//
+    sect->m_nomCurve = new CNurbCurve(npts, xVal, yVal, kv, m_english, 0, nomtension, nomfixdat);
+    delete[] xVal;
+    delete[] yVal;
+    delete[] kv;
+    return true;
 }
 // as of November 2017, these are defined in SECTION.CPP
 Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValues, const ptrdiff_t n);

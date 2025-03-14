@@ -92,24 +92,7 @@ bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRo
 		
 		if (analysis->Locate(0, fitType, fitToMiddleOfZone,Transfit,noRotate,rotfit, useNominal))
 		{
-#if 0//输出打印调试信息
-			CBestFit* thisFit = m_pBlade->m_section[i]->GetBestFitV1(m_pBestFitSection[i][bfind]);
-			thisFit->ReportFit(m_pFlavor->m_reportFit[bfind]);
-
-			double x, y, ang, np[2], bp[2];
-			thisFit->ReturnFit(&x, &y, &ang);
-			bugout(2, L"Locate: after CalcAlign %d, will cal GetBestFitV1{%lf,%lf, %lf}",
-				m_pBestFitSection[i][bfind], x, y, ang);
-			int numPoints = thisFit->NumPoints();
-			//for(int i = 0; i < numPoints; i++)
-			//{
-			//  np[0] = thisFit->m_noms->m[i][0];
-			//  np[1] = thisFit->m_noms->m[i][1];
-			//  bp[0] = thisFit->m_infs->m[i][0];
-			//  bp[1] = thisFit->m_infs->m[i][1];
-			//  bugout(3, L"after CalcAlign  %lf %lf %lf %lf}", bp[0], bp[1], np[0], np[1]);
-			//}
-#endif 
+ 
 		}
 	}
 	return false;

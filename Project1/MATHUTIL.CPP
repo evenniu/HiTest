@@ -24,8 +24,8 @@ void bugout(int, const WCHAR*, ...)
 #else
 void bugout(int level, const WCHAR* format, ...)
 {
-  if(level > minDebugLevel)
-    return;
+  //if(level > minDebugLevel)
+  //  return;
 
   va_list args;
 

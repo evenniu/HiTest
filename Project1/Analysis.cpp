@@ -435,6 +435,7 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 
 bool CAnalysis::Locate(int secid, BladeBestFitType fitType,int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal)
 {
+	bugout(0, L"Locate: entered");
 	double mtols[4] = { -100, -100, -100, -100 };
 	double ptols[4] = { 100, 100, 100, 100 };
 	int bfind = 0;

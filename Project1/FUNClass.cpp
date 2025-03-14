@@ -95,6 +95,7 @@ namespace MyApp
 		bugout(0,L"ReadData entered %d", numpoints);
 		if (numpoints <5)
 		{
+			bugout(0, L"ReadData entered %d return", numpoints);
 			return false;
 		}  
 		

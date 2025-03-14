@@ -437,11 +437,81 @@ CBestFit* createMeasuredPointsToNominalCurveBestFit(const Hexagon::Blade::Sectio
         isUsedInFit, fitParams, mtols, ptols);
     return result.release();
 }
+const double infinity = std::numeric_limits<double>::infinity();
 
 struct ChordInformation
 {
     Eigen::Vector2d leadingPoint, trailingPoint, leadingCenter, trailingCenter, leadingVector, trailingVector;
 };
+void setRotationOptions(Hexagon::Blade::FitOptions& options, const CFitParams& fp)
+{
+    // what kinds of rotation are allowed?
+    switch (fp.rotfit)
+    {
+    case 0: // no limits to rotation
+        options.allowRotation = true;
+        options.rotationLimits = Eigen::Vector2d(-infinity, infinity);
+        break;
+    case 1: // no rotation allowed at all
+        options.allowRotation = false;
+        break;
+    case 2: // rotation allowed within limits
+        options.allowRotation = true;
+        // convert the rotation limits to radians
+        options.rotationLimits = M_PI * Eigen::Vector2d(fp.rotMTol, fp.rotPTol) / 180.0;
+        break;
+    default:
+        throw std::logic_error("This should be impossible.");
+    }
+}
+
+
+void setTranslationOptions(Hexagon::Blade::FitOptions& options, const CFitParams& fp, const ChordInformation& target,
+    const ChordInformation& fitted)
+{
+    switch (fp.tranfit)
+    {
+    case 0: // no limits to rotation
+    case 4: // no limits to rotation
+    case 5: // no limits to rotation
+        break;
+    case 1: // no translation allowed at all
+        options.allowTranslation = false;
+        break;
+    case 2: // translation allowed within limits
+        options.translationXLimits = Eigen::Vector2d(fp.tranMTol[0], fp.tranPTol[0]);
+        options.translationYLimits = Eigen::Vector2d(fp.tranMTol[1], fp.tranPTol[1]);
+        break;
+    case 3: // a pivot point is selected; no translation allowed
+    {
+        options.allowTranslation = false;
+        switch (fp.pivot)
+        {
+            //case 0: // pivot about LE center
+            //    options.targetCurvePivotPoint = target.leadingCenter;
+            //    options.pointsPivotPoint = fitted.leadingCenter;
+            //    break;
+            //case 1: // pivot about LE nose
+            //    options.targetCurvePivotPoint = target.leadingPoint;
+            //    options.pointsPivotPoint = fitted.leadingPoint;
+            //    break;
+            //case 2: // pivot about TE center
+            //    options.targetCurvePivotPoint = target.trailingCenter;
+            //    options.pointsPivotPoint = fitted.trailingCenter;
+            //    break;
+            //case 3: // pivot about TE tail
+            //    options.targetCurvePivotPoint = target.trailingPoint;
+            //    options.pointsPivotPoint = fitted.trailingPoint;
+            //    break;
+            //default:
+            //    throw std::logic_error("This should be impossible.");
+        }
+    }
+    break;
+    default:
+        throw std::logic_error("This should be impossible.");
+    }
+}
 
 Eigen::Isometry2d TestcreateGuessTransform(const CFitParams& fp, const ChordInformation& targetChord,
     const ChordInformation& fittedChord,
@@ -640,7 +710,7 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     {
         index = m_numBestFits;
         
-            createMeasuredPointsToNominalCurveBestFit(sectionCurve, Eigen::Isometry2d::Identity(), measuredPoints,
+        m_bestFits[m_numBestFits] = createMeasuredPointsToNominalCurveBestFit(sectionCurve, Eigen::Isometry2d::Identity(), measuredPoints,
                 Eigen::ArrayXb::Ones(m_totalPoints), fp, mtols, ptols);
         m_numBestFits++;
         bugout(0, L"FitPoints:entered * m_numBestFits=%d ***", m_numBestFits);
@@ -649,20 +719,22 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     }
 
     ChordInformation nominalChordInfo;
-    if (!Chord(0, nominalChordInfo.leadingPoint.data(), nominalChordInfo.trailingPoint.data(),
-        nominalChordInfo.leadingCenter.data(), nominalChordInfo.trailingCenter.data(),
-        nominalChordInfo.leadingVector.data(), nominalChordInfo.trailingVector.data()))
-    {
-        //return false;//¡Ÿ ±◊¢ ÕµÙ
-    }
+    //if (!Chord(0, nominalChordInfo.leadingPoint.data(), nominalChordInfo.trailingPoint.data(),
+    //    nominalChordInfo.leadingCenter.data(), nominalChordInfo.trailingCenter.data(),
+    //    nominalChordInfo.leadingVector.data(), nominalChordInfo.trailingVector.data()))
+    //{
+    //    //return false;//¡Ÿ ±◊¢ ÕµÙ
+    //}
     ChordInformation measuredChordInfo;
-    if (!Chord(1, measuredChordInfo.leadingPoint.data(), measuredChordInfo.trailingPoint.data(),
-        measuredChordInfo.leadingCenter.data(), measuredChordInfo.trailingCenter.data(),
-        measuredChordInfo.leadingVector.data(), measuredChordInfo.trailingVector.data()))
-    {
-        //return false;//¡Ÿ ±◊¢ ÕµÙ
-    }
+    //if (!Chord(1, measuredChordInfo.leadingPoint.data(), measuredChordInfo.trailingPoint.data(),
+    //    measuredChordInfo.leadingCenter.data(), measuredChordInfo.trailingCenter.data(),
+    //    measuredChordInfo.leadingVector.data(), measuredChordInfo.trailingVector.data()))
+    //{
+    //    //return false;//¡Ÿ ±◊¢ ÕµÙ
+    //}
     // create an initial guess
+    Hexagon::Blade::FitOptions options;
+
     const Eigen::Isometry2d guessTransform =
         TestcreateGuessTransform(fp, nominalChordInfo, measuredChordInfo,
             Hexagon::Blade::measuredSectionCurve(this), LEType(), TEType());
@@ -674,28 +746,90 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
         Eigen::VectorXd::LinSpaced(numFineSamples + 1, NomCurve()->t0(), NomCurve()->t1()).head(numFineSamples);
     const Eigen::Matrix2Xd fineNominalPoints = Hexagon::Blade::evaluate(*NomCurve(), fineNominalTValues);
 
+    if (fp.fitToMiddleOfZone)
+    {
+        //const Eigen::Matrix2Xd nominalPoints = constructPointMatrix(m_nomx, m_nomy, m_numNomPoints);
+        //auto coarseMinusTolerances = createToleranceCurve(*sectionCurve.whole, nominalPoints,
+        //    Eigen::Map<const Eigen::ArrayXd>(m_mtol, m_numNomPoints));
+        //auto coarsePlusTolerances = createToleranceCurve(*sectionCurve.whole, nominalPoints,
+        //    Eigen::Map<const Eigen::ArrayXd>(m_ptol, m_numNomPoints));
+        //Eigen::ArrayXd fineMinusTolerances = Hexagon::Blade::evaluate(*coarseMinusTolerances, fineNominalTValues);
+        //Eigen::ArrayXd finePlusTolerances = Hexagon::Blade::evaluate(*coarsePlusTolerances, fineNominalTValues);
+
+        //// if there are profile tolerances from the form dialog box, use those instead of the ones from the .NOM file
+        //if (fp.profilePTol > fp.profileMTol)
+        //{
+        //    fineMinusTolerances = Eigen::ArrayXd::Constant(numFineSamples, fp.profileMTol);
+        //    finePlusTolerances = Eigen::ArrayXd::Constant(numFineSamples, fp.profilePTol);
+        //} // create the tolerance curves themselves
+        //if (itMakesSenseToCreateInnerAndOuterToleranceCurves(fineMinusTolerances, finePlusTolerances))
+        //{
+        //    options.innerTolerance = createToleranceCurve(*sectionCurve.whole, fineNominalPoints, fineMinusTolerances);
+        //    options.outerTolerance = createToleranceCurve(*sectionCurve.whole, fineNominalPoints, finePlusTolerances);
+        //}
+    }
+
+    Eigen::VectorXd weightFittedPoints(m_totalPoints);
+    std::vector<Hexagon::Blade::LinearDeviation> linearDeviations;
     std::unique_ptr<const Hexagon::Blade::Curve<2>> reducedCurveToFit;
     TestfigureOutWeightingAndEndpointConstraints(this);//≤‚ ‘figureOutWeightingAndEndpointConstraints
+
+    options.weightFittedPoints = Eigen::VectorXd::Zero(m_totalPoints);
+    for (int m = 0; m < m_totalPoints; m++)
+    {
+        options.weightFittedPoints[m] = 1;
+    }
+
+
     const Hexagon::Blade::Curve<2>* curveToFit = NomCurve();
     if (reducedCurveToFit)//always empty
     {
         curveToFit = reducedCurveToFit.get();
     }
+    // set the pivot points (may get overwritten later; that's OK)
+    if (weightFittedPoints.sum() > 0.0)
+    {
+        options.pointsPivotPoint = measuredPoints * weightFittedPoints / weightFittedPoints.sum();
+        options.targetCurvePivotPoint = guessTransform * options.pointsPivotPoint.head<2>();
+    }
+    else
+    {
+        options.pointsPivotPoint = Eigen::Vector2d::Zero();
+        options.targetCurvePivotPoint = Eigen::Vector2d::Zero();
+    }
+
     const Eigen::VectorXd distancesToPivot =
         (measuredPoints).colwise().norm().transpose();
     //const double scale = (weightFittedPoints.array() > 0.0).select(distancesToPivot, 0.0).maxCoeff();
     const double scale = 1000;
-  /*  options.translationXLimits = Eigen::Vector2d(-scale, scale);
-    options.translationYLimits = Eigen::Vector2d(-scale, scale);*/
+    options.translationXLimits = Eigen::Vector2d(-scale, scale);
+    options.translationYLimits = Eigen::Vector2d(-scale, scale);
 
     // set the rotation and translation options
-    //setRotationOptions(options, fp);
-    //setTranslationOptions(options, fp, nominalChordInfo, measuredChordInfo);
-    ///std::vector<Hexagon::Blade::LinearDeviation> linearDeviations1;
+    setRotationOptions(options, fp);
+    setTranslationOptions(options, fp, nominalChordInfo, measuredChordInfo);
+    std::vector<Hexagon::Blade::LinearDeviation> linearDeviations1;
 
     if (fp.algorithm == BestFitAlgorithm::LeastSquares)
     {
-       // auto fitTransform =TestcomputeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options, linearDeviations1, inchSize);
+        auto fitTransform = Hexagon::Blade::computeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options,
+            linearDeviations, inchSize);
+        index = m_numBestFits;
+        if (fp.tranfit == 4) // To X Axis
+        {
+            fitTransform(1, 2) = 0; // y offset
+        }
+        else if (fp.tranfit == 5) // To Y Axis
+        {
+            fitTransform(0, 2) = 0; // x offset
+        }
+        m_bestFits[m_numBestFits] = createMeasuredPointsToNominalCurveBestFit(
+            sectionCurve, fitTransform, measuredPoints, options.weightFittedPoints.array() > 0.0, fp, mtols, ptols);
+        for (int i = 0; i < m_totalPoints; i++)
+        {
+            m_bestFits[m_numBestFits]->Omega(i, options.weightFittedPoints[i]);
+        }
+        m_numBestFits++;
     }
     return true;
 }
@@ -1074,22 +1208,22 @@ double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d&
     return computeCurveLineIntersectionT(curve, midPoint, crossLineDirection);
 }
 //»±…ŸBestFits.h
-//std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
-//    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
-//    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
-//{
-//    Eigen::Vector2d nominalPoint, nominalTangent;
-//    std::tie(nominalPoint, nominalTangent) =
-//        Hexagon::Blade::evaluateWithDerivative(nominalCurve, Eigen::Map<const Eigen::VectorXd>(&nominalTValue, 1));
-//    const Eigen::Vector2d measuredPoint =
-//        Hexagon::Blade::evaluate(measuredCurve, Eigen::Map<const Eigen::VectorXd>(&measuredTValue, 1));
-//    const Eigen::Vector2d nominalNormal = (Hexagon::Blade::makeRotate90() * nominalTangent).normalized();
-//    if (canMakeLinearDeviationHere(nominalTValue))
-//    {
-//        return std::make_unique<const Hexagon::Blade::LinearDeviation>(nominalPoint, nominalNormal, measuredPoint);
-//    }
-//    return nullptr;
-//}
+std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
+    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
+    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
+{
+    Eigen::Vector2d nominalPoint, nominalTangent;
+    std::tie(nominalPoint, nominalTangent) =
+        Hexagon::Blade::evaluateWithDerivative(nominalCurve, Eigen::Map<const Eigen::VectorXd>(&nominalTValue, 1));
+    const Eigen::Vector2d measuredPoint =
+        Hexagon::Blade::evaluate(measuredCurve, Eigen::Map<const Eigen::VectorXd>(&measuredTValue, 1));
+    const Eigen::Vector2d nominalNormal = (Hexagon::Blade::makeRotate90() * nominalTangent).normalized();
+    if (canMakeLinearDeviationHere(nominalTValue))
+    {
+        return std::make_unique<const Hexagon::Blade::LinearDeviation>(nominalPoint, nominalNormal, measuredPoint);
+    }
+    return nullptr;
+}
 // this function should only be called when the line only intersects the curve in one place
 
 
@@ -1167,3 +1301,4 @@ CBestFit* CSection::GetBestFitV1(int index)
     bestfit = m_bestFits[0];
     return bestfit;
 }
+

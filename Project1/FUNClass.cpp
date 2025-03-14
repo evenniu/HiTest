@@ -92,6 +92,7 @@ namespace MyApp
 	}
 	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints, double* nomxyzijk[8], int numNomPt)
 	{
+		bugout(0,L"ReadData entered %d", numpoints);
 		if (numpoints <5)
 		{
 			return false;

@@ -487,24 +487,24 @@ void setTranslationOptions(Hexagon::Blade::FitOptions& options, const CFitParams
         options.allowTranslation = false;
         switch (fp.pivot)
         {
-            //case 0: // pivot about LE center
-            //    options.targetCurvePivotPoint = target.leadingCenter;
-            //    options.pointsPivotPoint = fitted.leadingCenter;
-            //    break;
-            //case 1: // pivot about LE nose
-            //    options.targetCurvePivotPoint = target.leadingPoint;
-            //    options.pointsPivotPoint = fitted.leadingPoint;
-            //    break;
-            //case 2: // pivot about TE center
-            //    options.targetCurvePivotPoint = target.trailingCenter;
-            //    options.pointsPivotPoint = fitted.trailingCenter;
-            //    break;
-            //case 3: // pivot about TE tail
-            //    options.targetCurvePivotPoint = target.trailingPoint;
-            //    options.pointsPivotPoint = fitted.trailingPoint;
-            //    break;
-            //default:
-            //    throw std::logic_error("This should be impossible.");
+            case 0: // pivot about LE center
+                options.targetCurvePivotPoint = target.leadingCenter;
+                options.pointsPivotPoint = fitted.leadingCenter;
+                break;
+            case 1: // pivot about LE nose
+                options.targetCurvePivotPoint = target.leadingPoint;
+                options.pointsPivotPoint = fitted.leadingPoint;
+                break;
+            case 2: // pivot about TE center
+                options.targetCurvePivotPoint = target.trailingCenter;
+                options.pointsPivotPoint = fitted.trailingCenter;
+                break;
+            case 3: // pivot about TE tail
+                options.targetCurvePivotPoint = target.trailingPoint;
+                options.pointsPivotPoint = fitted.trailingPoint;
+                break;
+            default:
+                throw std::logic_error("This should be impossible.");
         }
     }
     break;
@@ -812,6 +812,10 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
 
     if (fp.algorithm == BestFitAlgorithm::LeastSquares)
     {
+       /* for (int m = 0; m < m_totalPoints; m++)
+        {
+            options.weightFittedPoints[m] = 1;
+        }*/
         auto fitTransform = Hexagon::Blade::computeLeastSquaresBestFit(*curveToFit, measuredPoints, guessTransform, options,
             linearDeviations, inchSize);
         index = m_numBestFits;

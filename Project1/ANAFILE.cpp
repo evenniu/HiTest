@@ -425,7 +425,7 @@ namespace MyFuncClassApplication
 		m_pNomFile = NULL;
 		std::string savePath = "C:/Users/Public/Documents/Hitest.out";
 
-		DeleteFileA(savePath.c_str());
+		//DeleteFileA(savePath.c_str());
 		m_analysis = new CAnalysis();
 		m_buf[0] = 0;
 		m_autoSave = false;

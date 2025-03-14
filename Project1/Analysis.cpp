@@ -77,6 +77,57 @@ int CAnalysis::FitSplines()
 		int s = 0;
 		CCurve* ncp = m_pBlade->m_section[s]->NomCurve();
 		CCurve* whole = 0;
+		int nomfixdat = myGetProfileInt(L"NominalRemove", 0) == 0 ? FALSE : TRUE;
+		int nomtension = myGetProfileInt(L"NominalTension", 0) == 0 ? FALSE : TRUE;
+		int numNompoints = m_pBlade->m_section[s]->GetNumNomPoints();
+		double nomxyk[3], origmeasxy_start[2], origmeasxy_end[2], Min = 1000;
+		origmeasxy_start[0] = m_sect[i].x[0];
+		origmeasxy_start[1] = m_sect[i].y[0];
+		origmeasxy_end[0] = m_sect[i].x[m_sect[i].m_numPoints - 1];
+		origmeasxy_end[1] = m_sect[i].y[m_sect[i].m_numPoints - 1];
+		int nomindex1 = 0, nomindex2 = 0;
+		double nt_start, nt_end;
+		double tmp_t0, tmp_t1, xy[2];
+		tmp_t0 = m_pBlade->m_section[s]->NomCurve()->T0();
+		tmp_t1 = m_pBlade->m_section[s]->NomCurve()->T1();
+		m_pBlade->m_section[s]->NomCurve()->ClosestPoint(origmeasxy_start, xy, &nt_start, NULL, tmp_t0, tmp_t1);
+		m_pBlade->m_section[s]->NomCurve()->ClosestPoint(origmeasxy_end, xy, &nt_end, NULL, tmp_t0, tmp_t1);
+		if (nt_start > nt_end) // do swap
+		{
+			int measnum = m_sect[i].m_numPoints;
+			double* mx;
+			double* my;
+			double* mz;
+			double* mi;
+			double* mj;
+			mx = new double[measnum];
+			my = new double[measnum];
+			mz = new double[measnum];
+			mi = new double[measnum];
+			mj = new double[measnum];
+			for (int j = 0; j < measnum; j++)
+			{
+				mx[j] = m_sect[i].x[j];
+				my[j] = m_sect[i].y[j];
+				mz[j] = m_sect[i].z[j];
+				mi[j] = m_sect[i].i[j];
+				mj[j] = m_sect[i].j[j];
+			}
+			for (int j = 0; j < measnum; j++)
+			{
+				int k = (measnum - 1 - j) % measnum;
+				m_sect[i].x[k] = mx[j];
+				m_sect[i].y[k] = my[j];
+				m_sect[i].z[k] = mz[j];
+				m_sect[i].i[k] = mi[j];
+				m_sect[i].j[k] = mj[j];
+			}
+			delete[] mx;
+			delete[] my;
+			delete[] mz;
+			delete[] mi;
+			delete[] mj;
+		}
 		whole =new CNurbCurve(m_sect[i].m_numPoints, m_sect[i].x, m_sect[i].y, 0, true, 0, 1, 1, 0.0, 0, 0, 0, 2.0, true);
 		if(!whole)
 		{

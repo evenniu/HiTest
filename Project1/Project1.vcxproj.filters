@@ -144,6 +144,12 @@
     <ClInclude Include="PLANE.H">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="BestFits.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AlwaysAssert.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FUNClass.cpp">
@@ -266,5 +272,11 @@
     <ClCompile Include="PLANE.CPP">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="BestFits.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

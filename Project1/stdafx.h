@@ -17,7 +17,7 @@ using namespace std;
 #include "BladeError.h"
 #include "CBLADE.H"
 
-//-#include "AlwaysAssert.h"
+#include "AlwaysAssert.h"
 
 #define M_PI 3.14159265358979323846
 extern void bugout(int level, const WCHAR* fmt, ...);

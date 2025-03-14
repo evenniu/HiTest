@@ -149,6 +149,7 @@
     <ClInclude Include="AbstractCurve.h" />
     <ClInclude Include="AES.h" />
     <ClInclude Include="ALIGNMENT.H" />
+    <ClInclude Include="AlwaysAssert.h" />
     <ClInclude Include="ANAFILE.h" />
     <ClInclude Include="Analysis.h" />
     <ClInclude Include="ArraySlicing.h" />

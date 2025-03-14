@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -21,8 +22,84 @@ namespace HiTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        int sum = 0;
+        static List<double[]> ReadDataFromFile(string filePath)
+        {
+            List<double[]> data = new List<double[]>();
 
+            // 检查文件是否存在
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("File not found!");
+                return data;
+            }
+
+            // 逐行读取文件内容
+            foreach (string line in File.ReadLines(filePath))
+            {
+                // 分割每一行的数据
+                string[] values = line.Split(new char[] { ' ', ',', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                double[] row = new double[values.Length];
+
+                // 将字符串转换为 double 类型
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (double.TryParse(values[i], out double value))
+                    {
+                        row[i] = value;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid value: {values[i]}");
+                    }
+                }
+
+                // 添加到数据列表
+                data.Add(row);
+            }
+
+            return data;
+        }
+
+
+        // 将 List<double[]> 转换为指针
+        public static IntPtr Convert2DArrayToPointer(List<double[]> array)
+        {
+            int rows = array.Count;
+            int cols = array[0].Length;
+
+            // 创建一个指针数组
+            IntPtr[] pointers = new IntPtr[rows];
+            for (int i = 0; i < rows; i++)
+            {
+                pointers[i] = Marshal.AllocHGlobal(cols * sizeof(double));
+                Marshal.Copy(array[i], 0, pointers[i], cols);
+            }
+
+            // 创建一个指针数组的指针
+            IntPtr pointerToPointer = Marshal.AllocHGlobal(rows * IntPtr.Size);
+            Marshal.Copy(pointers, 0, pointerToPointer, rows);
+
+            return pointerToPointer;
+        }
+
+        // 释放指针数组的内存
+        public static void FreePointerToPointer(IntPtr pointerToPointer, int rows)
+        {
+            // 获取指针数组
+            IntPtr[] pointers = new IntPtr[rows];
+            Marshal.Copy(pointerToPointer, pointers, 0, rows);
+
+            // 释放每一行的内存
+            for (int i = 0; i < rows; i++)
+            {
+                Marshal.FreeHGlobal(pointers[i]);
+            }
+
+            // 释放指针数组的内存
+            Marshal.FreeHGlobal(pointerToPointer);
+        }
+        int sum = 0;
+        const int COLUM = 8;
         public MainWindow()
         {
             InitializeComponent();
@@ -32,59 +109,70 @@ namespace HiTest
             double m1 = ImportSimleDLL.Multiply(10, 10);
             string plainText = "12d33qwe";
             int numpts = 16;
-            double[,] points = new double[16, 6]
+            string filePath = "meas.txt";
+            List<double[]> Measdata = ReadDataFromFile(filePath);
+           
+            filePath = "nom.txt";
+            List<double[]> Nomdata = ReadDataFromFile(filePath);
+            IntPtr ptr_MeasPoints = IntPtr.Zero;
+            IntPtr ptr_NomPoints = IntPtr.Zero;
+            try
             {
-                {51.333500, -79.210700, 111.010000, -0.725300, -0.661900, 0.189200},
-                {51.267300, -79.135800, 111.010000, -0.740500, -0.640700, 0.202200},
-                {51.203100, -79.059100, 111.010000, -0.754900, -0.619600, 0.214200},
-                {51.140700, -78.981000, 111.010000, -0.768400, -0.598800, 0.225100},
-                {51.079800, -78.901600, 111.010000, -0.781200, -0.578300, 0.235300},
-                {51.021700, -78.820300, 111.010000, -0.792700, -0.558400, 0.244000},
-                {50.965100, -78.737900, 111.010000, -0.803600, -0.539000, 0.251800},
-                {50.910400, -78.654100, 111.010000, -0.813700, -0.520300, 0.258700},
-                {50.857500, -78.569300, 111.010000, -0.823000, -0.502400, 0.264600},
-                {50.806000, -78.483600, 111.010000, -0.831800, -0.485000, 0.269700},
-                {50.756800, -78.396500, 111.010000, -0.839700, -0.468800, 0.273700},
-                {50.708300, -78.309100, 111.010000, -0.847300, -0.453000, 0.277200},
-                {50.663700, -78.219600, 111.010000, -0.853400, -0.439700, 0.278700},
-                {50.619400, -78.129900, 111.010000, -0.859500, -0.426700, 0.280100},
-                {50.575200, -78.040300, 111.010000, -0.865500, -0.413700, 0.281500},
-                {50.531000, -77.950500, 111.010000, -0.871400, -0.400800, 0.282800}
-            };
-
-            // 获取二维数组的指针
-
-            // 将二维数组转换为一维数组
-            int rows = points.GetLength(0);
-            int cols = points.GetLength(1);
-            double[] flatArray = new double[rows * cols];
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < cols; j++)
+                // 定义二维数组
+                double[,] points = new double[10, 6]
                 {
-                    flatArray[i * cols + j] = points[i, j];
+                    {30.988247  ,   6.020396    ,   18.014885   ,   0.897296    ,   -0.44143    ,   0 },
+                    { 31.097179 ,   6.239536    ,   18.014845   ,   0.876845    ,   -0.480773   ,   0},
+                    { 31.245785 ,   6.484317    ,   18.013525   ,   0.832046    ,   -0.554706   ,   0},
+                    { 31.420549 ,   6.723003    ,   18.01368    ,   0.775016    ,   -0.631941   ,   0},
+                    { 31.627651 ,   6.950818    ,   18.013124   ,   0.702666    ,   -0.711519   ,   0},
+                    { 31.84613  ,   7.145291    ,   18.01388    ,   0.63355 ,   -0.773702   ,   0},
+                    { 32.067757 ,   7.312995    ,   18.013113   ,   0.571805    ,   -0.820389   ,   0},
+                    { 32.29871  ,   7.460814    ,   18.012386   ,   0.508472    ,   -0.861078   ,   0},
+                    { 32.562943 ,   7.602392    ,   18.009466   ,   0.417274    ,   -0.908781   ,   0},
+                    {32.817093  ,   7.702025    ,   18.010332   ,   0.35126 ,   -0.936278   ,   0}
+                };
+
+                // 将二维数组转换为一维数组
+                int rows = points.GetLength(0);
+                int cols = points.GetLength(1);
+                double[] flatArray = new double[rows * cols];
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j = 0; j < cols; j++)
+                    {
+                        flatArray[i * cols + j] = points[i, j];
+                    }
+                }
+
+                // 创建一个指针数组
+                IntPtr[] pointers = new IntPtr[rows];
+                for (int i = 0; i < rows; i++)
+                {
+                    pointers[i] = Marshal.AllocHGlobal(cols * sizeof(double));
+                    Marshal.Copy(flatArray, i * cols, pointers[i], cols);
+                }
+
+                // 创建一个指针数组的指针
+                IntPtr pointerToPointer = Marshal.AllocHGlobal(rows * IntPtr.Size);
+                Marshal.Copy(pointers, 0, pointerToPointer, rows);
+                bool result = ImportSimleDLL.LoadPoint(pointerToPointer, rows);
+                // 释放内存
+                for (int i = 0; i < rows; i++)
+                {
+                    Marshal.FreeHGlobal(pointers[i]);
+                }
+                Marshal.FreeHGlobal(pointerToPointer);
+                if (result)
+                {
+                    ImportSimleDLL.CalcBestFit(0, 0, 0, false, 0, 0);
                 }
             }
-
-            // 创建一个指针数组
-            IntPtr[] pointers = new IntPtr[rows];
-            for (int i = 0; i < rows; i++)
+            catch(Exception ex)
             {
-                pointers[i] = Marshal.AllocHGlobal(cols * sizeof(double));
-                Marshal.Copy(flatArray, i * cols, pointers[i], cols);
+
             }
 
-            // 创建一个指针数组的指针
-            IntPtr pointerToPointer = Marshal.AllocHGlobal(rows * IntPtr.Size);
-            Marshal.Copy(pointers, 0, pointerToPointer, rows);
-            bool result = ImportSimleDLL.LoadPoint(pointerToPointer, rows);
-            // 释放内存
-            for (int i = 0; i < rows; i++)
-            {
-                Marshal.FreeHGlobal(pointers[i]);
-            }
-            Marshal.FreeHGlobal(pointerToPointer);
-            
             ImportSimleDLL.Release();
 
 

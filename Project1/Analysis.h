@@ -190,6 +190,7 @@ public:
 	void Initialize();
 	bool CalcAlign(int r, BladeBestFitType typ, int doingBow = 0, int bfind = 0, double* mtols = NULL, double* ptols = NULL);
 	bool Locate(int r, double* xy, int doingBow);
+	bool Locate(int secid, BladeBestFitType fitType, int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal=0);
 	bool FillCells();
 	int GetMethod(int c, int ts);
 	double inchSize() const

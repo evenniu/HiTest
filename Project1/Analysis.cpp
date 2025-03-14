@@ -53,9 +53,18 @@ int CAnalysis::FitSplines()
 	double t0[4], t1[4];
 	CCurve* lec, * tec, * cvc, * ccc;
 	m_numSuspicious = 0;
-	
+	m_pBSect = new int[m_numSect];
+	m_pBestFitSection = new int* [m_numSect];
+
+	for (i = 0; i < m_numSect; i++)
+	{
+		m_pBestFitSection[i] = new int[MAXFITS];
+		for (int jj = 0; jj < MAXFITS; jj++)
+			m_pBestFitSection[i][jj] = -1;
+	}
 	for (i = 0; i < m_numSect; i++)//实测截面个数
-	{		
+	{
+		m_pBSect[i] = i;
 		double mtle = -1.0, mtte = -1.0;
 		double ler = -1.0, ter = -1.0;
 
@@ -134,10 +143,14 @@ int CAnalysis::FitSplines()
 		
 
 		m_pBlade->m_section[i]->AssignPoints(m_sect[i].x, m_sect[i].y, m_sect[i].m_numPoints, start, end);
+		
+
 
 	}
 	if (i < m_numSect)
 		return 0;
+
+	
 	return 1;
 }
 void CAnalysis::Initialize()
@@ -216,7 +229,6 @@ Eigen::Matrix2Xd constructPointMatrix(const double* xValues, const double* yValu
 bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, double* mtols, double* ptols)
 {
 	bugout(0, L"CalcAlign(): enterdd");
-	typ = BladeBestFitType::BestFitNone;
 	CFitParams fp;
 	fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
 	fp.weightcurve[CVC] = 1;
@@ -280,8 +292,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	}
 	if (typ == BladeBestFitType::BestFitNone) // no fit
 	{
-		if (m_pBestFitSection[r][bfind] >= 0)
-			return true;
+		
 
 		fp.algorithm = BestFitAlgorithm::None; // no fit
 		fp.fitcurve[CVC] = 1;
@@ -298,10 +309,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 			Hexagon::Blade::toIsometry2d(*wholeFit->GetAlign()), measuredPoints,
 			Eigen::ArrayXb::Ones(partOf.size()), fp, mtols, ptols)*/;
 
-	//if (typ == BladeBestFitType::BestFitLeastSquares)
-	//{
-	//	if (m_pBestFitSection[r][bfind] >= 0)
-	//		return true;
+
 		fp.algorithm = BestFitAlgorithm::LeastSquares; // ls fit
 		fp.fitcurve[CVC] = 1;
 		fp.fitcurve[CCC] = 1;
@@ -420,22 +428,43 @@ bool CAnalysis::Locate(int r, double* xy, int doingBow)
 			bugout(0, L"Locate: after CalcAlign, will cal GetBestFitV1");
 			//* thisFit = m_pBlade->m_section[bs]->GetBestFitV1(m_pBestFitSection[r][bfind]);
 		}
-		//if (CalcAlign(r, m_pFlavor->m_fitType[bfind], doingBow, bfind, mtols, ptols))
-		//{
-		//	bugout(0, L"Locate: after CalcAlign, will cal GetBestFitV1");
-		//	//CBestFit* thisFit = //m_pBlade->m_section[bs]->GetBestFitV1(m_pBestFitSection[r][bfind]);
-		//	//thisFit->ReportFit(m_pFlavor->m_reportFit[bfind]);
-		//	if (bfind == 0)
-		//	{
-		//		double theta;
-		//		//thisFit->ReturnFit(&xy[0], &xy[1], &theta);
-		//	}
-		//}
-		//else if (bfind == 0)
-		//{
-		//	return false;
-		//}
 
+	}
+	return false;
+}
+
+bool CAnalysis::Locate(int secid, BladeBestFitType fitType,int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal)
+{
+	double mtols[4] = { -100, -100, -100, -100 };
+	double ptols[4] = { 100, 100, 100, 100 };
+	int bfind = 0;
+	m_pFlavor->m_Transfit_bf[bfind] = Transfit;
+	m_pFlavor->m_noTranslate[bfind] = noRotate;
+	m_pFlavor->m_noRotate[bfind] = noRotate;
+	m_pFlavor->m_usenominals[bfind] = useNominal;
+	m_pFlavor->m_fitToMiddleOfZone[bfind] = fitToMiddleOfZone;
+
+	if (CalcAlign(secid, fitType, 0, bfind, mtols, ptols))
+	{
+		bugout(0, L"Locate: after CalcAlign, will cal GetBestFitV1");
+	#if 1//输出打印调试信息
+			CBestFit* thisFit = m_pBlade->m_section[secid]->GetBestFitV1(m_pBestFitSection[secid][bfind]);
+			thisFit->ReportFit(m_pFlavor->m_reportFit[bfind]);
+
+			double x, y, ang, np[2], bp[2];
+			thisFit->ReturnFit(&x, &y, &ang);
+			bugout(0, L"Locate: after CalcAlign %d, will cal GetBestFitV1{%lf,%lf, %lf}",
+				m_pBestFitSection[secid][bfind], x, y, ang);
+			int numPoints = thisFit->NumPoints();
+			//for(int i = 0; i < numPoints; i++)
+			//{
+			//  np[0] = thisFit->m_noms->m[i][0];
+			//  np[1] = thisFit->m_noms->m[i][1];
+			//  bp[0] = thisFit->m_infs->m[i][0];
+			//  bp[1] = thisFit->m_infs->m[i][1];
+			//  bugout(3, L"after CalcAlign  %lf %lf %lf %lf}", bp[0], bp[1], np[0], np[1]);
+			//}
+	#endif 
 	}
 	return false;
 }

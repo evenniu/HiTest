@@ -28,6 +28,6 @@ namespace MyApp
 		double Divide(double a, double b);
 		void TestMatrix(int np);
 		void Calculate(wstring plaintext);
-		bool ReadData(double * measxyzijk[8], int numpoints);
+		bool ReadData(double * measxyzijk[8], int numpoints, double* nomxyzijk[8], int numNomPt);
 	};
 }

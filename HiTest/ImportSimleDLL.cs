@@ -38,5 +38,9 @@ namespace HiTest
         public static extern void GetSecNum(int[] resultArray, ref int size);        
         [DllImport(DLLPath, EntryPoint = "LoadPoint", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern bool LoadPoint(IntPtr measPoints,  int numpoints);
+
+
+        [DllImport(DLLPath, EntryPoint = "CalcBestFit", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal);
     }
 }

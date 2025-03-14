@@ -90,7 +90,7 @@ namespace MyApp
 			return;
 		}
 	}
-	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints)
+	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints, double* nomxyzijk[8], int numNomPt)
 	{
 		if (numpoints <5)
 		{
@@ -140,7 +140,10 @@ namespace MyApp
 		{
 			delete[] kval;
 		}
-		analysis->FitSplines();
+		if (!analysis->FitSplines())
+		{
+			return false;
+		}
 	}
 }
 

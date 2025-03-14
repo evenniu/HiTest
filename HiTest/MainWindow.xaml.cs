@@ -38,6 +38,10 @@ namespace HiTest
             {
                 // 分割每一行的数据
                 string[] values = line.Split(new char[] { ' ', ',', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if(values.Length < 6)
+                {
+                    continue;
+                }
                 double[] row = new double[values.Length];
 
                 // 将字符串转换为 double 类型
@@ -103,10 +107,10 @@ namespace HiTest
         {
             InitializeComponent();
             ImportSimleDLL.CreateSimple();
-            string filePath = "./test/meas.txt";
+            string filePath = "./test/meas.xyz";
             List<double[]> measData = ReadDataFromFile(filePath);
            
-            filePath = "./test/nom.txt";
+            filePath = "./test/nom.xyz";
             List<double[]> nomData = ReadDataFromFile(filePath);
             IntPtr ptr_MeasPoints = IntPtr.Zero;
             IntPtr ptr_NomPoints = IntPtr.Zero;
@@ -137,10 +141,6 @@ namespace HiTest
                 FreePointerToPointer(p_nomPoi, nomData.Count);
                 ImportSimleDLL.Release();
             }
-
-           
-
-
         }
 
         private void Win_closed(object sender, EventArgs e)

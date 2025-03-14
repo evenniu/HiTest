@@ -98,52 +98,30 @@ namespace HiTest
             // 释放指针数组的内存
             Marshal.FreeHGlobal(pointerToPointer);
         }
-        int sum = 0;
         const int COLUM = 8;
         public MainWindow()
         {
             InitializeComponent();
             ImportSimleDLL.CreateSimple();
-            string filePath = "meas.txt";
-            List<double[]> Measdata = ReadDataFromFile(filePath);
+            string filePath = "./test/meas.txt";
+            List<double[]> measData = ReadDataFromFile(filePath);
            
-            filePath = "nom.txt";
-            List<double[]> Nomdata = ReadDataFromFile(filePath);
+            filePath = "./test/nom.txt";
+            List<double[]> nomData = ReadDataFromFile(filePath);
             IntPtr ptr_MeasPoints = IntPtr.Zero;
             IntPtr ptr_NomPoints = IntPtr.Zero;
-            int rows, cols;
+            int rows, cols; 
+            IntPtr p_measPoi = IntPtr.Zero;
+            IntPtr p_nomPoi  = IntPtr.Zero;
             try
             {
-                // 将二维数组转换为一维数组
-                rows = Measdata.Count();
-                cols = Measdata[0].Length;
-                double[] flatArray = new double[rows * cols];
-                for (int i = 0; i < rows; i++)
-                {
-                    for (int j = 0; j < cols; j++)
-                    {
-                        flatArray[i * cols + j] = Measdata[i][j];
-                    }
-                }
-
-                // 创建一个指针数组
-                IntPtr[] pointers = new IntPtr[rows];
-                for (int i = 0; i < rows; i++)
-                {
-                    pointers[i] = Marshal.AllocHGlobal(cols * sizeof(double));
-                    Marshal.Copy(flatArray, i * cols, pointers[i], cols);
-                }
-
-                // 创建一个指针数组的指针
-                IntPtr pointerToPointer = Marshal.AllocHGlobal(rows * IntPtr.Size);
-                Marshal.Copy(pointers, 0, pointerToPointer, rows);
-                bool result = ImportSimleDLL.LoadPoint(pointerToPointer, rows);
-                // 释放内存
-                for (int i = 0; i < rows; i++)
-                {
-                    Marshal.FreeHGlobal(pointers[i]);
-                }
-                Marshal.FreeHGlobal(pointerToPointer);
+                rows = measData.Count();
+               
+                p_measPoi= Convert2DArrayToPointer(measData);
+                p_nomPoi = Convert2DArrayToPointer(nomData);
+                cols = nomData[0].Length;
+                bool result = ImportSimleDLL.LoadPoints(p_measPoi, rows,p_nomPoi, nomData.Count,cols);
+                
                 if (result)
                 {
                     ImportSimleDLL.CalcBestFit(0, 0, 0, false, 0, 0);
@@ -151,9 +129,12 @@ namespace HiTest
             }
             catch(Exception ex)
             {
-
-            }finally
+                MessageBox.Show(ex.ToString());
+            }
+            finally
             {
+                FreePointerToPointer(p_measPoi, measData.Count);
+                FreePointerToPointer(p_nomPoi, nomData.Count);
                 ImportSimleDLL.Release();
             }
 

@@ -90,9 +90,11 @@ namespace MyApp
 			return;
 		}
 	}
-	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints, double* nomxyzijk[8], int numNomPt)
+	bool FUNClass::ReadData(double* measxyzijk[8], int numpoints, double* nomxyzijk[8], int numNomPt, int cols)
 	{
-		bugout(0,L"ReadData entered %d", numpoints);
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+		bugout(0,L"ReadData entered %d [%d:%d:%d]", numpoints, st.wHour, st.wMinute, st.wSecond);
 		if (numpoints <5)
 		{
 			bugout(0, L"ReadData entered %d return", numpoints);
@@ -137,7 +139,7 @@ namespace MyApp
 			kval[i] = 0;
 		}       
 		
-		analysis->m_pBlade->ReadNomdata(numpoints, analysis->m_sect[id].x, analysis->m_sect[id].y,kval);
+		analysis->m_pBlade->ReadNomdata(numNomPt,cols, nomxyzijk);
 		if (kval)
 		{
 			delete[] kval;

@@ -21,6 +21,7 @@ extern "C" __declspec(dllexport) void Release();
 extern "C" __declspec(dllexport) void GetFunc(int * res, int size);//获取测量点
 extern "C" __declspec(dllexport) void GetSecNum(int * res, int &size);//获取测量点
 extern "C" __declspec(dllexport) bool LoadPoint(double** meas, int numpoint);//获取meas&nom point
+extern "C" __declspec(dllexport) bool LoadPoints(double** meas, int numpoint ,double** nom, int numNompoint, int cols);//获取meas&nom point
 extern "C" __declspec(dllexport) bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRotate,int rotfit=0, int useNominal=0);
 
 

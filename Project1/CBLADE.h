@@ -62,6 +62,6 @@ public:
 	}
 
 	bool ReadFile(FILE* fp);
-	bool ReadNomdata(int npts, double* xv, double* yv, double* kv);
+	bool ReadNomdata(int npts,int cols, double** xyzijk);
 };
 

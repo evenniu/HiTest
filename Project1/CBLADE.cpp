@@ -251,26 +251,83 @@ bool CBlade::ReadFile(FILE* fp)
     }
     return true;
 }
-bool CBlade::ReadNomdata(int npts,double* xv,double* yv,double* kv)
+bool CBlade::ReadNomdata(int npts,int col, double** xyzijk)
 {
     int nomfixdat = myGetProfileInt(L"NominalRemove", 0) == 0 ? FALSE : TRUE;
     int nomtension = myGetProfileInt(L"NominalTension", 0) == 0 ? FALSE : TRUE;
-    int i;
+    int s;
     m_numSections = 1;
+    int numPts;
     m_section = new CSection * [m_numSections];
-    CSection* sect = new CSection;
-    for (i = 0; i < m_numSections; i++)
+    for (s = 0; s < m_numSections; s++)
     {
         CCurve* whole = 0;
         CSection* sect = new CSection;
-        m_section[i] = sect; 
-        m_section[i]->m_nomCurve = new CNurbCurve(npts, xv, yv, kv, m_english, 0, nomtension, nomfixdat);
-        whole = m_section[i]->m_nomCurve;
+        numPts = npts;
+        sect->MakeNomArrays(numPts, nullptr);
+        /*
+            for(int j = 0; j < numPts; j++)
+            {
+              double xyijk[5];
+              fread(xyijk, sizeof(double), 5, fp);
+              sect->AddNomXYIJK(j, xyijk);
+              double tolerances[2];
+              fread(tolerances, sizeof(double), 2, fp);
+              sect->AddTol(j, tolerances);
+            }
+        */ 
+        double* xVal = new double[numPts];
+        double* yVal = new double[numPts];
+        double* kv = new double[numPts];
+        bool havek = false, haveTol= false;
+        if (col == 8)
+        {
+            havek = true;
+            haveTol = true;
+        }
+        else if (col == 6)
+        {
+            havek = false;
+            haveTol = true;
+        }
+        for (int i = 0; i < numPts; i++)
+        {
+            double xyijk[5]; 
+            xVal[i] = xyzijk[i][0];
+            yVal[i] = xyzijk[i][1];
+            xyijk[0] = xVal[i];
+            xyijk[1] = yVal[i];
+            if (havek)
+            {
+                xyijk[2] = xyzijk[i][3];
+                xyijk[3] = xyzijk[i][4];
+                xyijk[4] = xyzijk[i][5];
+            }
+  
+            sect->AddNomXYIJK(i, xyijk);
+
+            double tolerances[2];
+            if (haveTol)
+            {
+                tolerances[0] = xyzijk[i][6];
+                tolerances[1] = xyzijk[i][7];
+                sect->AddTol(i, tolerances);
+            }
+            
+            kv[i] = 0;
+            
+        }
+        m_section[s] = sect; 
+        m_section[s]->m_nomCurve = new CNurbCurve(numPts, xVal, yVal, kv, m_english, 0, nomtension, nomfixdat);
+        whole = m_section[s]->m_nomCurve;
         double period = whole->T1() - whole->T0();
-        m_section[i]->m_nomPart[CVC] = new CSubCurve(whole, whole->T0(), whole->T1(), period );
-        m_section[i]->m_nomPart[CCC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
-        m_section[i]->m_nomPart[LEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
-        m_section[i]->m_nomPart[TEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        m_section[s]->m_nomPart[CVC] = new CSubCurve(whole, whole->T0(), whole->T1(), period );
+        m_section[s]->m_nomPart[CCC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        m_section[s]->m_nomPart[LEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        m_section[s]->m_nomPart[TEC] = new CSubCurve(whole, whole->T0(), whole->T1(), period);
+        delete[] xVal;
+        delete[] yVal;
+        delete[] kv;
     }
 
 

@@ -72,7 +72,16 @@ bool LoadPoint(double** meas, int numpoint)
 {
 	if (g_pSimple)
 	{
-		return g_pSimple->ReadData(meas, numpoint, nullptr,0);
+		return g_pSimple->ReadData(meas, numpoint, nullptr);
+	}
+	return false;
+}
+
+bool LoadPoints(double** meas, int numpoint, double** nom, int numNompoint, int cols)
+{
+	if (g_pSimple)
+	{
+		return g_pSimple->ReadData(meas, numpoint, nom, numNompoint, cols);
 	}
 	return false;
 }

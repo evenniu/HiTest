@@ -39,6 +39,8 @@ namespace HiTest
         [DllImport(DLLPath, EntryPoint = "LoadPoint", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern bool LoadPoint(IntPtr measPoints,  int numpoints);
 
+        [DllImport(DLLPath, EntryPoint = "LoadPoints", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern bool LoadPoints(IntPtr measPoints, int numpoints, IntPtr nomPoints, int numNompoints, int cols);
 
         [DllImport(DLLPath, EntryPoint = "CalcBestFit", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal);

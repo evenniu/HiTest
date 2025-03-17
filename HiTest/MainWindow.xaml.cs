@@ -22,7 +22,7 @@ namespace HiTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        static List<double[]> ReadDataFromFile(string filePath)
+        public  static List<double[]> ReadDataFromFile(string filePath)
         {
             List<double[]> data = new List<double[]>();
 
@@ -69,6 +69,10 @@ namespace HiTest
         public static IntPtr Convert2DArrayToPointer(List<double[]> array)
         {
             int rows = array.Count;
+            if (rows <= 0)
+            {
+                return IntPtr.Zero;
+            }
             int cols = array[0].Length;
 
             // 创建一个指针数组
@@ -89,6 +93,10 @@ namespace HiTest
         // 释放指针数组的内存
         public static void FreePointerToPointer(IntPtr pointerToPointer, int rows)
         {
+            if (rows <= 0)
+            {
+                return;
+            }
             // 获取指针数组
             IntPtr[] pointers = new IntPtr[rows];
             Marshal.Copy(pointerToPointer, pointers, 0, rows);
@@ -123,6 +131,12 @@ namespace HiTest
                
                 p_measPoi= Convert2DArrayToPointer(measData);
                 p_nomPoi = Convert2DArrayToPointer(nomData);
+                if (p_measPoi == IntPtr.Zero || p_nomPoi == IntPtr.Zero)
+                {
+                    ImportSimleDLL.Release();
+                    return;
+                }
+
                 cols = nomData[0].Length;
                 bool result = ImportSimleDLL.LoadPoints(p_measPoi, rows,p_nomPoi, nomData.Count,cols);
                 

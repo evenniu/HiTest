@@ -9,7 +9,7 @@ namespace HiTest
 {
     public static class ImportSimleDLL
     {
-        const string DLLPath = @"Blademath.dll";
+        const string DLLPath = @"BladeMath.dll";
         [DllImport(DLLPath, EntryPoint = "CreateSimple", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.None)]
         public static extern void CreateSimple();
 

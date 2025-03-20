@@ -513,10 +513,8 @@ void setTranslationOptions(Hexagon::Blade::FitOptions& options, const CFitParams
     }
 }
 
-Eigen::Isometry2d TestcreateGuessTransform(const CFitParams& fp, const ChordInformation& targetChord,
-    const ChordInformation& fittedChord,
-    
-    const Hexagon::Blade::SectionCurve& fittedCurves, const int leType,
+Eigen::Isometry2d createGuessTransform(const CFitParams& fp, const ChordInformation& targetChord,
+    const ChordInformation& fittedChord, const Hexagon::Blade::SectionCurve& fittedCurves, const int leType,
     const int teType)
 {
     const double targetChordLength = (targetChord.leadingPoint - targetChord.trailingPoint).norm();
@@ -651,22 +649,6 @@ Eigen::Isometry2d TestcreateGuessTransform(const CFitParams& fp, const ChordInfo
 
 
 
-void  TestfigureOutWeightingAndEndpointConstraints(const CSection* section)
-{
-    // const auto nominalSectionCurve = Hexagon::Blade::nominalSectionCurve(section);
-    const int leType = section->LEType();
-    const int teType = section->TEType();
-
-    typedef std::unique_ptr<const CSubCurve> PointerType;
-    //typedef std::vector<Hexagon::Blade::LinearDeviation> Deviations;
-   // typedef std::tuple<Eigen::VectorXd, Deviations, std::unique_ptr<const Hexagon::Blade::Curve<2>>> ReturnType;
-
-    // make some half curves, because we use them sometimes
-    //PointerType nominalConcaveHalfCurve = MakeNominalHalfCurve(section, CCC);
-    //PointerType nominalConvexHalfCurve = MakeNominalHalfCurve(section, CVC);
-    PointerType measuredConcaveHalfCurve = MakeMeasuredHalfCurve(section, CCC);
-    PointerType measuredConvexHalfCurve = MakeMeasuredHalfCurve(section, CVC);
-}
 
 // create a function that looks for t-values of closest approach to a point
 template <class TreeType>
@@ -736,7 +718,7 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     Hexagon::Blade::FitOptions options;
 
     const Eigen::Isometry2d guessTransform =
-        TestcreateGuessTransform(fp, nominalChordInfo, measuredChordInfo,
+        createGuessTransform(fp, nominalChordInfo, measuredChordInfo,
             Hexagon::Blade::measuredSectionCurve(this), LEType(), TEType());
    // Hexagon::Blade::FitOptions options;
 
@@ -772,7 +754,7 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     Eigen::VectorXd weightFittedPoints(m_totalPoints);
     std::vector<Hexagon::Blade::LinearDeviation> linearDeviations;
     std::unique_ptr<const Hexagon::Blade::Curve<2>> reducedCurveToFit;
-    TestfigureOutWeightingAndEndpointConstraints(this);//≤‚ ‘figureOutWeightingAndEndpointConstraints
+   // figureOutWeightingAndEndpointConstraints(this);//≤‚ ‘figureOutWeightingAndEndpointConstraints
 
     options.weightFittedPoints = Eigen::VectorXd::Zero(m_totalPoints);
     for (int m = 0; m < m_totalPoints; m++)
@@ -1175,16 +1157,54 @@ int CSection::Chord(int flg, double* lcp, double* tcp, double* lctr, double* tct
 
     return 1;
 }
-bool isNear_periodic(double t1, double t2, double period)
+
+
+
+Eigen::VectorXd lowMagnitudeFinitePeriodicDifference(const Eigen::Ref<const Eigen::ArrayXd>& t,
+    const Eigen::Ref<const Eigen::ArrayXd>& f, const double period)
 {
-    return std::abs(std::remainder(t2 - t1, period)) < 1e-3;
+    const ptrdiff_t N = t.size();
+
+    // the central difference is one of the estimates
+    Eigen::ArrayXd centralDifference(N);
+    centralDifference.segment(1, N - 2) = (f.tail(N - 2) - f.head(N - 2)) / (t.tail(N - 2) - t.head(N - 2));
+    centralDifference[0] = (f[1] - f[N - 1]) / (t[1] - t[N - 1] + period);
+    centralDifference[N - 1] = (f[0] - f[N - 2]) / (t[0] - t[N - 2] + period);
+
+    // we can also look at the forward and backward differences
+    Eigen::ArrayXd forwardDifference(N);
+    forwardDifference.head(N - 1) = (f.tail(N - 1) - f.head(N - 1)) / (t.tail(N - 1) - t.head(N - 1));
+    forwardDifference[N - 1] = (f[0] - f[N - 1]) / (t[0] - t[N - 1]);
+    Eigen::ArrayXd reverseDifference(N);
+    reverseDifference.tail(N - 1) = (f.tail(N - 1) - f.head(N - 1)) / (t.tail(N - 1) - t.head(N - 1));
+    reverseDifference[0] = (f[0] - f[N - 1]) / (t[0] - t[N - 1]);
+
+    // construct the low-magnitude result
+    const Eigen::ArrayXd lowMagnitudeOneSidedDifference =
+        (forwardDifference.cwiseAbs() < reverseDifference.cwiseAbs()).select(forwardDifference, reverseDifference);
+    const Eigen::ArrayXd result = (centralDifference.cwiseAbs() < lowMagnitudeOneSidedDifference.cwiseAbs())
+        .select(centralDifference, lowMagnitudeOneSidedDifference);
+
+    // all done
+    return result;
 }
 
-bool isWithinOrNear_periodic(double t, const Hexagon::Blade::Curve<2>& curve)
+// this function should only be called when the circle only intersects the curve in one place
+double computeCurveCircleIntersectionT(const Hexagon::Blade::Curve<2>& curve,
+    const Eigen::Ref<const Eigen::Vector2d>& circleCenter, const double circleRadius)
 {
-    return isNear_periodic(t, curve.t0(), curve.period()) || isNear_periodic(t, curve.t1(), curve.period()) ||
-        Hexagon::Blade::tIsInSubcurve(t, curve, curve.period());
+    const Eigen::Vector2d contiguousCenter = circleCenter;
+
+    double intersectionT;
+    Eigen::Vector2d intersectionPoint;
+    if (circleRadius < 1e-5 || !Hexagon::Blade::circleIntersection(curve, contiguousCenter.data(), circleRadius,
+        intersectionPoint.data(), 0.0, 0.0, &intersectionT))
+    {
+        Hexagon::Blade::closestPoint(curve, contiguousCenter.data(), intersectionPoint.data(), &intersectionT);
+    }
+    return intersectionT;
 }
+
 
 double computeCurveLineIntersectionT(const Hexagon::Blade::Curve<2>& curve,
     const Eigen::Ref<const Eigen::Vector2d>& linePoint,
@@ -1203,31 +1223,8 @@ double computeCurveLineIntersectionT(const Hexagon::Blade::Curve<2>& curve,
     return intersectionT;
 }
 
-double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d& bounds)
-{
-    const Eigen::Matrix2d endPoints = Hexagon::Blade::evaluate(curve, bounds);
-    const Eigen::Vector2d midPoint = endPoints.rowwise().mean();
-    const Eigen::Vector2d crossLineDirection =
-        (Hexagon::Blade::makeRotate90() * (endPoints.col(1) - endPoints.col(0))).normalized();
-    return computeCurveLineIntersectionT(curve, midPoint, crossLineDirection);
-}
-//»±…ŸBestFits.h
-std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
-    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
-    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
-{
-    Eigen::Vector2d nominalPoint, nominalTangent;
-    std::tie(nominalPoint, nominalTangent) =
-        Hexagon::Blade::evaluateWithDerivative(nominalCurve, Eigen::Map<const Eigen::VectorXd>(&nominalTValue, 1));
-    const Eigen::Vector2d measuredPoint =
-        Hexagon::Blade::evaluate(measuredCurve, Eigen::Map<const Eigen::VectorXd>(&measuredTValue, 1));
-    const Eigen::Vector2d nominalNormal = (Hexagon::Blade::makeRotate90() * nominalTangent).normalized();
-    if (canMakeLinearDeviationHere(nominalTValue))
-    {
-        return std::make_unique<const Hexagon::Blade::LinearDeviation>(nominalPoint, nominalNormal, measuredPoint);
-    }
-    return nullptr;
-}
+
+
 // this function should only be called when the line only intersects the curve in one place
 
 
@@ -1306,3 +1303,467 @@ CBestFit* CSection::GetBestFitV1(int index)
     return bestfit;
 }
 
+
+
+bool isNear_periodic(double t1, double t2, double period)
+{
+    return std::abs(std::remainder(t2 - t1, period)) < 1e-3;
+}
+bool isWithinOrNear_periodic(double t, const Hexagon::Blade::Curve<2>& curve)
+{
+    return isNear_periodic(t, curve.t0(), curve.period()) || isNear_periodic(t, curve.t1(), curve.period()) ||
+        Hexagon::Blade::tIsInSubcurve(t, curve, curve.period());
+}
+
+std::unique_ptr<const Hexagon::Blade::LinearDeviation> makeLinearDeviationFromTValue(
+    const Hexagon::Blade::Curve<2>& nominalCurve, const Hexagon::Blade::Curve<2>& measuredCurve,
+    std::function<bool(double)> canMakeLinearDeviationHere, const double nominalTValue, const double measuredTValue)
+{
+    Eigen::Vector2d nominalPoint, nominalTangent;
+    std::tie(nominalPoint, nominalTangent) =
+        Hexagon::Blade::evaluateWithDerivative(nominalCurve, Eigen::Map<const Eigen::VectorXd>(&nominalTValue, 1));
+    const Eigen::Vector2d measuredPoint =
+        Hexagon::Blade::evaluate(measuredCurve, Eigen::Map<const Eigen::VectorXd>(&measuredTValue, 1));
+    const Eigen::Vector2d nominalNormal = (Hexagon::Blade::makeRotate90() * nominalTangent).normalized();
+    if (canMakeLinearDeviationHere(nominalTValue))
+    {
+        return std::make_unique<const Hexagon::Blade::LinearDeviation>(nominalPoint, nominalNormal, measuredPoint);
+    }
+    return nullptr;
+}
+double findMiddleT(const Hexagon::Blade::Curve<2>& curve, const Eigen::Vector2d& bounds)
+{
+    const Eigen::Matrix2d endPoints = Hexagon::Blade::evaluate(curve, bounds);
+    const Eigen::Vector2d midPoint = endPoints.rowwise().mean();
+    const Eigen::Vector2d crossLineDirection =
+        (Hexagon::Blade::makeRotate90() * (endPoints.col(1) - endPoints.col(0))).normalized();
+    return computeCurveLineIntersectionT(curve, midPoint, crossLineDirection);
+}
+
+std::unique_ptr<const Hexagon::Blade::LinearDeviation>
+makeLinearDeviationFromMidpoint(const Hexagon::Blade::Curve<2>& nominalCurve,
+    const Hexagon::Blade::Curve<2>& measuredCurve,
+    std::function<bool(double)> canMakeLinearDeviationHere)
+{
+    const auto nominalBounds = Hexagon::Blade::parametricBounds(nominalCurve);
+    const auto measuredBounds = Hexagon::Blade::parametricBounds(measuredCurve);
+    const bool ok0 = canMakeLinearDeviationHere(nominalBounds[0]);
+    const bool ok1 = canMakeLinearDeviationHere(nominalBounds[1]);
+    if (ok0 == ok1) // use midpoint if both true or if both false
+    {
+        const double nominalMiddleT = findMiddleT(nominalCurve, nominalBounds);
+        const double measuredMiddleT = findMiddleT(measuredCurve, measuredBounds);
+        return makeLinearDeviationFromTValue(nominalCurve, measuredCurve, canMakeLinearDeviationHere, nominalMiddleT,
+            measuredMiddleT);
+    }
+    else if (ok0)
+    {
+        return makeLinearDeviationFromTValue(nominalCurve, measuredCurve, canMakeLinearDeviationHere, nominalBounds[0],
+            measuredBounds[0]);
+    }
+    else if (ok1)
+    {
+        return makeLinearDeviationFromTValue(nominalCurve, measuredCurve, canMakeLinearDeviationHere, nominalBounds[1],
+            measuredBounds[1]);
+    }
+    return nullptr;
+}
+
+std::unique_ptr<const Hexagon::Blade::LinearDeviation>
+meanLinearDeviation(std::unique_ptr<const Hexagon::Blade::LinearDeviation> a,
+    std::unique_ptr<const Hexagon::Blade::LinearDeviation> b)
+{
+    if (!a && !b)
+    {
+        return nullptr;
+    }
+    if (a && !b)
+    {
+        return a;
+    }
+    if (!a && b)
+    {
+        return b;
+    }
+    if (a && b)
+    {
+        Eigen::Matrix2d vectors;
+        vectors << a->nominalTangentDirection, b->nominalTangentDirection;
+        const Eigen::Vector2d newTangent = vectors.jacobiSvd(Eigen::ComputeFullU).matrixU().col(0);
+        return std::make_unique<const Hexagon::Blade::LinearDeviation>(
+            0.5 * (a->nominalPoint + b->nominalPoint), newTangent, 0.5 * (a->measuredPoint + b->measuredPoint));
+    }
+    throw std::logic_error("This should be impossible.");
+}
+
+std::tuple<Eigen::VectorXd, std::vector<Hexagon::Blade::LinearDeviation>,
+    std::unique_ptr<const Hexagon::Blade::Curve<2>>>
+    figureOutWeightingAndEndpointConstraints(const CFitParams& fp, const CSection* section)
+{
+    // we need linear deviations sometimes to keep things confined
+    const auto nominalSectionCurve = Hexagon::Blade::nominalSectionCurve(section);
+    const int leType = section->LEType();
+    const int teType = section->TEType();
+    auto canMakeLinearDeviationHere = [&nominalSectionCurve, leType, teType](double nominalT) -> bool {
+        if (isWithinOrNear_periodic(nominalT, *nominalSectionCurve.leading))
+        {
+            return leType != EDGE_PARTIAL;
+        }
+        if (isWithinOrNear_periodic(nominalT, *nominalSectionCurve.trailing))
+        {
+            return teType != EDGE_PARTIAL;
+        }
+        return true;
+    };
+
+    typedef std::unique_ptr<const CSubCurve> PointerType;
+    typedef std::vector<Hexagon::Blade::LinearDeviation> Deviations;
+    typedef std::tuple<Eigen::VectorXd, Deviations, std::unique_ptr<const Hexagon::Blade::Curve<2>>> ReturnType;
+
+    // make some half curves, because we use them sometimes
+    PointerType nominalConcaveHalfCurve = MakeNominalHalfCurve(section, CCC);
+    PointerType nominalConvexHalfCurve = MakeNominalHalfCurve(section, CVC);
+    PointerType measuredConcaveHalfCurve = MakeMeasuredHalfCurve(section, CCC);
+    PointerType measuredConvexHalfCurve = MakeMeasuredHalfCurve(section, CVC);
+
+    // first, figure out the points weighting, and some nominal points and vectors
+    Eigen::VectorXd weightFittedPoints = Eigen::VectorXd::Zero(section->m_totalPoints);
+    bool offsetsAreUnusable = (fp.leoff1 == 0.0 && fp.leoff2 == 0.0 && fp.teoff1 == 0.0 && fp.teoff2 == 0.0) ||
+        fp.leoff1 < 0.0 || fp.leoff2 < 0.0 || fp.teoff1 < 0.0 || fp.teoff2 < 0.0 ||
+        fp.leoff1 > fp.leoff2 || fp.teoff1 > fp.teoff2 ||
+        (fp.leoff1 == fp.leoff2 && fp.teoff1 == fp.teoff2);
+    if (offsetsAreUnusable && !fp.complexEdgeZone && !fp.chordZone)
+    {
+        // if there are no leading/trailing edge offsets, or any of the offsets are nonsense,
+        // then the weighting is purely based on which part of the curve each point is assigned to
+        const Eigen::Map<const Eigen::ArrayXi> partOf(section->m_partOf, section->m_totalPoints);
+        weightFittedPoints = (partOf == CCC).select(fp.fitcurve[CCC] ? fp.weightcurve[CCC] : 0.0, weightFittedPoints);
+        weightFittedPoints = (partOf == CVC).select(fp.fitcurve[CVC] ? fp.weightcurve[CVC] : 0.0, weightFittedPoints);
+        weightFittedPoints =
+            (partOf == LEC)
+            .select(fp.fitcurve[LEC] && leType != EDGE_PARTIAL ? fp.weightcurve[LEC] : 0.0, weightFittedPoints);
+        weightFittedPoints =
+            (partOf == TEC)
+            .select(fp.fitcurve[TEC] && teType != EDGE_PARTIAL ? fp.weightcurve[TEC] : 0.0, weightFittedPoints);
+
+        // Do we need any linear deviations? That depends on which curves are involved in the fit
+        // figure out the linear deviations
+        if (fp.fitcurve[LEC] || fp.fitcurve[TEC])
+        {
+            // if the LEC and/or TEC are involved in the fit, we can get away without any linear deviations
+            return ReturnType(weightFittedPoints, Deviations{}, nullptr);
+        }
+        else if (fp.fitcurve[CCC] && fp.fitcurve[CVC])
+        {
+            alwaysAssert(!fp.fitcurve[LEC] && !fp.fitcurve[TEC]);
+            // With the CCC and CVC but not the LEC and not the TEC being fitted,
+            // we need linear deviations to avoid the risk that the fit will
+            // "slide" from side to side
+            auto deviationCCC = makeLinearDeviationFromMidpoint(*nominalConcaveHalfCurve, *measuredConcaveHalfCurve,
+                canMakeLinearDeviationHere);
+            auto deviationCVC = makeLinearDeviationFromMidpoint(*nominalConvexHalfCurve, *measuredConvexHalfCurve,
+                canMakeLinearDeviationHere);
+            auto linearDeviation = meanLinearDeviation(std::move(deviationCCC), std::move(deviationCVC));
+            alwaysAssert(linearDeviation);
+            return ReturnType(weightFittedPoints, Deviations{ *linearDeviation }, nullptr);
+        }
+        else if (fp.fitcurve[CCC])
+        {
+            alwaysAssert(!fp.fitcurve[LEC] && !fp.fitcurve[TEC] && !fp.fitcurve[CVC] && fp.fitcurve[CCC]);
+            auto linearDeviation = makeLinearDeviationFromMidpoint(*nominalConcaveHalfCurve, *measuredConcaveHalfCurve,
+                canMakeLinearDeviationHere);
+            alwaysAssert(linearDeviation);
+            return ReturnType(weightFittedPoints, Deviations{ *linearDeviation }, std::move(nominalConcaveHalfCurve));
+        }
+        else if (fp.fitcurve[CVC])
+        {
+            alwaysAssert(!fp.fitcurve[LEC] && !fp.fitcurve[TEC] && fp.fitcurve[CVC] && !fp.fitcurve[CCC]);
+            auto linearDeviation = makeLinearDeviationFromMidpoint(*nominalConvexHalfCurve, *measuredConvexHalfCurve,
+                canMakeLinearDeviationHere);
+            alwaysAssert(linearDeviation);
+            return ReturnType(weightFittedPoints, Deviations{ *linearDeviation }, std::move(nominalConvexHalfCurve));
+        }
+    }
+
+    // what are the measured points and their t-values?
+    const Eigen::Matrix2Xd measuredPoints =
+        constructPointMatrix(section->m_mxpt, section->m_mypt, section->m_totalPoints);
+    Eigen::VectorXd measuredT(section->m_totalPoints);
+    Hexagon::Blade::findClosestTValues(*section->MeaCurve(), measuredT.data(), measuredPoints.data(),
+        section->m_totalPoints);
+
+    // at this point, we either have a LEARC, a TEARC, or a complex edge fit
+    int edgeCurve = -1;
+    Eigen::Vector2d edgeOffset;
+    bool edgeIsPartial = false;
+    {
+        alwaysAssert(fp.teoff1 < fp.teoff2);
+        alwaysAssert(fp.teoff1 >= 0.0);
+        edgeOffset << fp.teoff1, fp.teoff2;
+        edgeCurve = TEC;
+        edgeIsPartial = section->TEType() == EDGE_PARTIAL;
+    }
+
+    // figure out the tip locations
+    const double nominalTipT = section->NomPart(edgeCurve)->Extreme();
+    Eigen::Vector2d nominalTip;
+    section->NomPart(edgeCurve)->CalcPoint(nominalTip.data(), nominalTipT);
+    const double measuredTipT = section->MeaPart(edgeCurve)->Extreme();
+    Eigen::Vector2d measuredTip;
+    section->MeaPart(edgeCurve)->CalcPoint(measuredTip.data(), measuredTipT);
+
+    // now, do we have an edge-arc fit or a complex fit?
+    if (!offsetsAreUnusable && !fp.complexEdgeZone)
+    {
+        const Eigen::ArrayXd distanceToTip = (measuredPoints.colwise() - measuredTip).colwise().norm().transpose();
+        const Eigen::ArrayXb isBetweenArcs = distanceToTip >= edgeOffset[0] && distanceToTip <= edgeOffset[1];
+
+        // if we've gotten to this point, it's because we have a leading-edge-arc or trailing-edge-arc best-fit
+        // (and not a complex fit)
+        alwaysAssert(fp.leoff1 > 0.0 || fp.leoff2 > 0.0 || fp.teoff1 > 0.0 || fp.teoff2 > 0.0);
+        alwaysAssert(fp.leoff1 >= 0.0 && fp.leoff2 >= 0.0 && fp.teoff1 >= 0.0 && fp.teoff2 >= 0.0);
+        alwaysAssert(fp.leoff1 < fp.leoff2 || fp.teoff1 < fp.teoff2);
+        alwaysAssert(fp.leoff1 <= fp.leoff2 && fp.teoff1 <= fp.teoff2);
+
+        // are we fitting both sides or just one?
+        alwaysAssert(fp.fitcurve[CCC] || fp.fitcurve[CVC]);
+        if (fp.fitcurve[CCC] && fp.fitcurve[CVC])
+        {
+            // we're going to fit both sides, so we only need to weight based on distance to the leading edge
+            weightFittedPoints = isBetweenArcs.select(1.0, weightFittedPoints);
+
+            const double nominalConcaveT =
+                computeCurveCircleIntersectionT(*nominalConcaveHalfCurve, nominalTip, edgeOffset[0]);
+            const double nominalConvexT = computeCurveCircleIntersectionT(*nominalConvexHalfCurve, nominalTip, edgeOffset[0]);
+            const double measuredConcaveT =
+                computeCurveCircleIntersectionT(*measuredConcaveHalfCurve, measuredTip, edgeOffset[0]);
+            const double measuredConvexT =
+                computeCurveCircleIntersectionT(*measuredConvexHalfCurve, measuredTip, edgeOffset[0]);
+            auto deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(CCC), *section->MeaPart(CCC),
+                canMakeLinearDeviationHere, nominalConcaveT, measuredConcaveT);
+            auto deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(CVC), *section->MeaPart(CVC),
+                canMakeLinearDeviationHere, nominalConvexT, measuredConvexT);
+            Deviations devs;
+            if (!edgeIsPartial && deviationCCC && deviationCVC &&
+                (deviationCCC->nominalPoint - deviationCVC->nominalPoint).norm() > edgeOffset[1] - edgeOffset[0])
+            {
+                devs.push_back(*makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT));
+                devs.push_back(devs.at(0));
+                devs.at(1).nominalTangentDirection =
+                    Eigen::Vector2d(devs.at(1).nominalTangentDirection[1], -devs.at(1).nominalTangentDirection[0]);
+            }
+            else
+            {
+                auto linearDeviation = meanLinearDeviation(std::move(deviationCCC), std::move(deviationCVC));
+                if (linearDeviation)
+                {
+                    devs.push_back(*linearDeviation);
+                }
+            }
+            return ReturnType(weightFittedPoints, devs, nullptr);
+        }
+        else if (fp.fitcurve[CCC])
+        {
+            // only use the ones on the concave side that are within the distance range
+            alwaysAssert(!fp.fitcurve[CVC]);
+            const Eigen::ArrayXb isConcave =
+                Hexagon::Blade::tIsInSubcurve_eigen(measuredT, *measuredConcaveHalfCurve, section->MeaCurve()->Period());
+            weightFittedPoints = (isBetweenArcs && isConcave).select(1.0, weightFittedPoints);
+
+            const double nominalConcaveT =
+                computeCurveCircleIntersectionT(*nominalConcaveHalfCurve, nominalTip, edgeOffset[0]);
+            const double measuredConcaveT =
+                computeCurveCircleIntersectionT(*measuredConcaveHalfCurve, measuredTip, edgeOffset[0]);
+            auto deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(CCC), *section->MeaPart(CCC),
+                canMakeLinearDeviationHere, nominalConcaveT, measuredConcaveT);
+            Deviations devs;
+            if (deviationCCC)
+            {
+                devs.push_back(*deviationCCC);
+            }
+            return ReturnType(weightFittedPoints, devs, std::move(nominalConcaveHalfCurve));
+        }
+        else if (fp.fitcurve[CVC])
+        {
+            // only use the ones on the convex side that are within the distance range
+            alwaysAssert(!fp.fitcurve[CCC]);
+            const Eigen::ArrayXb isConvex =
+                Hexagon::Blade::tIsInSubcurve_eigen(measuredT, *measuredConvexHalfCurve, section->MeaCurve()->Period());
+            weightFittedPoints = (isBetweenArcs && isConvex).select(1.0, weightFittedPoints);
+
+            const double nominalConvexT = computeCurveCircleIntersectionT(*nominalConvexHalfCurve, nominalTip, edgeOffset[0]);
+            const double measuredConvexT =
+                computeCurveCircleIntersectionT(*measuredConvexHalfCurve, measuredTip, edgeOffset[0]);
+            auto deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(CVC), *section->MeaPart(CVC),
+                canMakeLinearDeviationHere, nominalConvexT, measuredConvexT);
+            Deviations devs;
+            if (deviationCVC)
+            {
+                devs.push_back(*deviationCVC);
+            }
+            return ReturnType(weightFittedPoints, devs, std::move(nominalConvexHalfCurve));
+        }
+        else
+        {
+            throw std::logic_error("This should be impossible; " + (__FILE__ + std::to_string(__LINE__)));
+        }
+    }
+    else
+    {
+        alwaysAssert(fp.complexEdgeZone);
+        const Hexagon::Blade::Curve<2>* const nominalMCL = section->NomPart(MCC);
+        const Hexagon::Blade::Curve<2>* const measuredMCL = section->MeaPart(MCC);
+
+        Eigen::Vector2d nominalMCLTRange, measuredMCLTRange;
+        nominalMCLTRange[0] = computeCurveCircleIntersectionT(*nominalMCL, nominalTip, edgeOffset[0]);
+        nominalMCLTRange[1] = computeCurveCircleIntersectionT(*nominalMCL, nominalTip, edgeOffset[1]);
+        measuredMCLTRange[0] = computeCurveCircleIntersectionT(*measuredMCL, measuredTip, edgeOffset[0]);
+        measuredMCLTRange[1] = computeCurveCircleIntersectionT(*measuredMCL, measuredTip, edgeOffset[1]);
+
+        Eigen::Matrix2d nominalMCLPoints, nominalMCLTangents;
+        std::tie(nominalMCLPoints, nominalMCLTangents) =
+            Hexagon::Blade::evaluateWithDerivative(*nominalMCL, nominalMCLTRange);
+        nominalMCLTangents.colwise().normalize();
+        Eigen::Matrix2d nominalMCLOrthogonals;
+        nominalMCLOrthogonals.row(0) = nominalMCLTangents.row(1);
+        nominalMCLOrthogonals.row(1) = -nominalMCLTangents.row(0);
+        nominalMCLOrthogonals.colwise().normalize();
+        const Eigen::Matrix2d measuredMCLPoints = Hexagon::Blade::evaluate(*measuredMCL, measuredMCLTRange);
+
+        const Eigen::Isometry2d alignToNominal = Hexagon::Blade::twoPointBestFit(
+            nominalMCLPoints.col(0), nominalMCLPoints.col(1), measuredMCLPoints.col(0), measuredMCLPoints.col(1));
+
+        // now we have the zones in the measured space
+        const Eigen::Matrix2d measuredZonePoints = alignToNominal.inverse() * nominalMCLPoints;
+        const Eigen::Matrix2d measuredZoneNormals =
+            (alignToNominal.inverse().linear() * nominalMCLTangents).colwise().normalized();
+        const Eigen::Matrix2d measuredZoneDirections =
+            (alignToNominal.inverse().linear() * nominalMCLOrthogonals).colwise().normalized();
+        const double normalSign = Hexagon::Blade::sign(nominalMCLTRange[1] - nominalMCLTRange[0]);
+        const Eigen::ArrayXb isWithinZone0 =
+            ((measuredPoints.colwise() - measuredZonePoints.col(0)).transpose() * measuredZoneNormals.col(0) * normalSign)
+            .array() >= 0.0;
+        const Eigen::ArrayXb isWithinZone1 =
+            ((measuredPoints.colwise() - measuredZonePoints.col(1)).transpose() * measuredZoneNormals.col(1) * normalSign)
+            .array() <= 0.0;
+        const Eigen::ArrayXb isWithinZone =
+            (edgeOffset[0] > 1e-5) ? Eigen::ArrayXb(isWithinZone0 && isWithinZone1) : isWithinZone1;
+
+        // intersect the measured curves and the nominal curves with the zone boundaries
+        // are we fitting both sides or just one?
+        alwaysAssert(fp.fitcurve[CCC] || fp.fitcurve[CVC]);
+        if (fp.fitcurve[CCC] && fp.fitcurve[CVC])
+        {
+            // we're going to fit both sides, so we only need to weight based on distance to the leading edge
+            weightFittedPoints = isWithinZone.select(1.0, weightFittedPoints);
+
+            std::unique_ptr<const Hexagon::Blade::LinearDeviation> deviationCCC, deviationCVC;
+            if (edgeOffset[0] > 1e-5)
+            {
+                const double nominalConcaveT = computeCurveLineIntersectionT(*nominalConcaveHalfCurve, nominalMCLPoints.col(0),
+                    nominalMCLOrthogonals.col(0));
+                const double nominalConvexT = computeCurveLineIntersectionT(*nominalConvexHalfCurve, nominalMCLPoints.col(0),
+                    nominalMCLOrthogonals.col(0));
+                const double measuredConcaveT = computeCurveLineIntersectionT(
+                    *measuredConcaveHalfCurve, measuredZonePoints.col(0), measuredZoneDirections.col(0));
+                const double measuredConvexT = computeCurveLineIntersectionT(
+                    *measuredConvexHalfCurve, measuredZonePoints.col(0), measuredZoneDirections.col(0));
+                deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(CCC), *section->MeaPart(CCC),
+                    canMakeLinearDeviationHere, nominalConcaveT, measuredConcaveT);
+                deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(CVC), *section->MeaPart(CVC),
+                    canMakeLinearDeviationHere, nominalConvexT, measuredConvexT);
+            }
+            else
+            {
+                deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT);
+                deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT);
+            }
+            Deviations devs;
+            if (!edgeIsPartial && deviationCCC && deviationCVC &&
+                (deviationCCC->nominalPoint - deviationCVC->nominalPoint).norm() > edgeOffset[1] - edgeOffset[0])
+            {
+                devs.push_back(*makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT));
+                devs.push_back(devs.at(0));
+                devs.at(1).nominalTangentDirection =
+                    Eigen::Vector2d(devs.at(1).nominalTangentDirection[1], -devs.at(1).nominalTangentDirection[0]);
+            }
+            else
+            {
+                auto linearDeviation = meanLinearDeviation(std::move(deviationCCC), std::move(deviationCVC));
+                if (linearDeviation)
+                {
+                    devs.push_back(*linearDeviation);
+                }
+            }
+            return ReturnType(weightFittedPoints, devs, nullptr);
+        }
+        else if (fp.fitcurve[CCC])
+        {
+            // only use the ones on the concave side that are within the distance range
+            alwaysAssert(!fp.fitcurve[CVC]);
+            const Eigen::ArrayXb isConcave =
+                Hexagon::Blade::tIsInSubcurve_eigen(measuredT, *measuredConcaveHalfCurve, section->MeaCurve()->Period());
+            weightFittedPoints = (isWithinZone && isConcave).select(1.0, weightFittedPoints);
+
+            std::unique_ptr<const Hexagon::Blade::LinearDeviation> deviationCCC;
+            if (edgeOffset[0] > 1e-5)
+            {
+                const double nominalConcaveT = computeCurveLineIntersectionT(*nominalConcaveHalfCurve, nominalMCLPoints.col(0),
+                    nominalMCLOrthogonals.col(0));
+                const double measuredConcaveT = computeCurveLineIntersectionT(
+                    *measuredConcaveHalfCurve, measuredZonePoints.col(0), measuredZoneDirections.col(0));
+                deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(CCC), *section->MeaPart(CCC),
+                    canMakeLinearDeviationHere, nominalConcaveT, measuredConcaveT);
+            }
+            else
+            {
+                deviationCCC = makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT);
+            }
+            Deviations devs;
+            if (deviationCCC)
+            {
+                devs.push_back(*deviationCCC);
+            }
+            return ReturnType(weightFittedPoints, devs, std::move(nominalConcaveHalfCurve));
+        }
+        else if (fp.fitcurve[CVC])
+        {
+            // only use the ones on the convex side that are within the distance range
+            alwaysAssert(!fp.fitcurve[CCC]);
+            const Eigen::ArrayXb isConvex =
+                Hexagon::Blade::tIsInSubcurve_eigen(measuredT, *measuredConvexHalfCurve, section->MeaCurve()->Period());
+            weightFittedPoints = (isWithinZone && isConvex).select(1.0, weightFittedPoints);
+
+            std::unique_ptr<const Hexagon::Blade::LinearDeviation> deviationCVC;
+            if (edgeOffset[0] > 1e-5)
+            {
+                const double nominalConvexT = computeCurveLineIntersectionT(*nominalConvexHalfCurve, nominalMCLPoints.col(0),
+                    nominalMCLOrthogonals.col(0));
+                const double measuredConvexT = computeCurveLineIntersectionT(
+                    *measuredConvexHalfCurve, measuredZonePoints.col(0), measuredZoneDirections.col(0));
+                deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(CVC), *section->MeaPart(CVC),
+                    canMakeLinearDeviationHere, nominalConvexT, measuredConvexT);
+            }
+            else
+            {
+                deviationCVC = makeLinearDeviationFromTValue(*section->NomPart(edgeCurve), *section->MeaPart(edgeCurve),
+                    canMakeLinearDeviationHere, nominalTipT, measuredTipT);
+            }
+            Deviations devs;
+            if (deviationCVC)
+            {
+                devs.push_back(*deviationCVC);
+            }
+            return ReturnType(weightFittedPoints, devs, std::move(nominalConvexHalfCurve));
+        }
+        else
+        {
+            throw std::logic_error("This should be impossible; " + (__FILE__ + std::to_string(__LINE__)));
+        }
+    }
+}

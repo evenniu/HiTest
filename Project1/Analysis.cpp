@@ -281,7 +281,7 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 {
 	bugout(0, L"CalcAlign(): enterdd");
 	CFitParams fp;
-	fp.usenominals = 1;// m_pFlavor->m_usenominals[bfind];
+	fp.usenominals = 0;// m_pFlavor->m_usenominals[bfind];
 	fp.weightcurve[CVC] = 1;
 	fp.weightcurve[CCC] = 1;
 	fp.weightcurve[LEC] = 1;
@@ -343,8 +343,6 @@ bool CAnalysis::CalcAlign(int r, BladeBestFitType typ, int doingBow, int bfind, 
 	}
 	if (typ == BladeBestFitType::BestFitNone) // no fit
 	{
-		
-
 		fp.algorithm = BestFitAlgorithm::None; // no fit
 		fp.fitcurve[CVC] = 1;
 		fp.fitcurve[CCC] = 1;
@@ -517,6 +515,7 @@ bool CAnalysis::Locate(int secid, BladeBestFitType fitType,int fitToMiddleOfZone
 			//  bugout(3, L"after CalcAlign  %lf %lf %lf %lf}", bp[0], bp[1], np[0], np[1]);
 			//}
 	#endif 
+			return true;
 	}
 	return false;
 }

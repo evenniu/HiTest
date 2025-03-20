@@ -101,7 +101,7 @@ bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRo
 		
 		if (analysis->Locate(0, fitType, fitToMiddleOfZone,Transfit,noRotate,rotfit, useNominal))
 		{
- 
+			return true;
 		}
 	}
 	return false;

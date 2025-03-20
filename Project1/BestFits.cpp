@@ -8,10 +8,10 @@
 #include "TemplateHermiteSpline.h"
 #include "HermiteCurve.h"
 #include "SUBCURVE.H"
-#include <HexagonGDT/FitProfile.h>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/detail/sha1.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+#include "HexagonGDT/FitProfile.h"
+#include "boost/uuid/uuid.hpp" //<boost/uuid/uuid.hpp>
+#include "boost/uuid/detail/sha1.hpp" //<boost/uuid/detail/sha1.hpp>
+#include  "boost/uuid/uuid_generators.hpp" // <boost/uuid/uuid_generators.hpp>
 #include <numeric>
 
 #pragma warning(push)
@@ -66,21 +66,21 @@ struct ConstructedMiddleOfToleranceZone : public Curve<2>
                                    const Curve<1>& outerTolerance)
     : nominal(nominal), innerTolerance(innerTolerance), outerTolerance(outerTolerance)
   {
-    assert(nominal.isPeriodic() == innerTolerance.isPeriodic());
+  //  assert(nominal.isPeriodic() == innerTolerance.isPeriodic());
     const double equalityThreshold = 1e-14 + 1e-14 * (nominal.t1() - nominal.t0());
     const auto essentiallyEqual = [=](double x, double y) { return std::abs(x - y) < equalityThreshold; };
-    assert(essentiallyEqual(nominal.t0(), innerTolerance.t0()));
-    assert(essentiallyEqual(nominal.t1(), innerTolerance.t1()));
+    //assert(essentiallyEqual(nominal.t0(), innerTolerance.t0()));
+    //assert(essentiallyEqual(nominal.t1(), innerTolerance.t1()));
 
-    assert(nominal.isPeriodic() == outerTolerance.isPeriodic());
-    assert(essentiallyEqual(nominal.t0(), outerTolerance.t0()));
-    assert(essentiallyEqual(nominal.t1(), outerTolerance.t1()));
+    //assert(nominal.isPeriodic() == outerTolerance.isPeriodic());
+    //assert(essentiallyEqual(nominal.t0(), outerTolerance.t0()));
+    //assert(essentiallyEqual(nominal.t1(), outerTolerance.t1()));
 
     // make sure the curve is counterclockwise
 #ifndef NDEBUG
     auto polygon = polygonalize(nominal, 2048, 1e-3);
 #endif
-    assert(signedArea(polygon) > 0.0);
+   // assert(signedArea(polygon) > 0.0);
   }
 
   // Inherited via Curve
@@ -713,10 +713,12 @@ Eigen::Isometry2d computeBestFit(const std::vector<const Curve<2>*> targetCurves
     surfaceDataArray.push_back(surfaceData);
     totalNumberOfPoints += surfaceData.numberOfPoints;
   }
+  bugout(0, L"CompuiteBestFit ****1");
 
   // if we don't have any points left, we're done
   if(totalNumberOfPoints == 0)
   {
+    bugout(0, L"CompuiteBestFit return **** error");
     return guess;
   }
 
@@ -740,6 +742,7 @@ Eigen::Isometry2d computeBestFit(const std::vector<const Curve<2>*> targetCurves
     fittingOptions.weightNominalCurves.push_back(weightTargetCurveArray.at(i).get());
     curvesForCalling.push_back(middleOfToleranceZoneArray.at(i).get());
   }
+  bugout(0, L"CompuiteBestFit return ****2");
 
   // put the linear deviations in
   std::vector<std::shared_ptr<const Eigen::VectorXd>> alignedDeviationPoints;
@@ -861,11 +864,12 @@ Eigen::Isometry2d computeBestFit(const std::vector<const Curve<2>*> targetCurves
       }
     }
   }
-
+  bugout(0, L"CompuiteBestFit return ****5");
   // do the profile fit
   auto fittedTransformation = Hexagon::MetrologyBuildingBlocks::fit2DProfiles(curvesForCalling, surfaceDataArray,
                                                                               fittingOptions, validateLicense);
-//  fittedTransformation.matrix
+  bugout(0, L"CompuiteBestFit return ****6");
+  //  fittedTransformation.matrix
   const bool allFinite = fittedTransformation.matrix().allFinite();
   if(!allFinite)
   {

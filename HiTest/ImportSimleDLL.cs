@@ -44,5 +44,17 @@ namespace HiTest
 
         [DllImport(DLLPath, EntryPoint = "CalcBestFit", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
         public static extern bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRotate, int rotfit, int useNominal);
+
+
+        [DllImport(DLLPath, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern bool GetDev(out IntPtr outdev, ref double maxdev, ref double mindev, out int size);
+
+        [DllImport(DLLPath, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void FreeMemory(IntPtr outdevPtr);
+
+
+
+        [DllImport(DLLPath, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.None)]
+        public static extern void GetFitResult(int report, ref double x, ref double y, ref double ang);
     }
 }

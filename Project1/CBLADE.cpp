@@ -364,6 +364,8 @@ bool CBlade::NormalReorderPoints(int npts,double** m, CSection *sect, bool havek
     double* xVal = new double[npts];
     double* yVal = new double[npts];
     double* kv = new double[npts];
+    bugout(0, L"NormalReorderPoints: cw %d m_havek=%d ", cw, havek);
+
     for (int i = 0; i < npts; i++)
     {
         if (cw)
@@ -399,6 +401,8 @@ bool CBlade::NormalReorderPoints(int npts,double** m, CSection *sect, bool havek
 
     }//
     sect->m_nomCurve = new CNurbCurve(npts, xVal, yVal, kv, m_english, 0, nomtension, nomfixdat);
+    
+    bugout(0, L"NormalReorderPoints curve T0=%lf ,T1=%lf", sect->m_nomCurve->T0(), sect->m_nomCurve->T1());
     delete[] xVal;
     delete[] yVal;
     delete[] kv;

@@ -106,3 +106,18 @@ bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRo
 	}
 	return false;
 }
+
+bool GetDev(double*& outdev, double& maxdev, double& mindev, int& size)
+{
+	return true;
+}
+
+bool GetFitResult(int report, double& x, double& y, double& ang)
+{
+	return true;
+}
+
+void FreeMemory(double* outdev)
+{
+	delete[] outdev;
+}

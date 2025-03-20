@@ -23,6 +23,10 @@ extern "C" __declspec(dllexport) void GetSecNum(int * res, int &size);//获取测量
 extern "C" __declspec(dllexport) bool LoadPoint(double** meas, int numpoint);//获取meas&nom point
 extern "C" __declspec(dllexport) bool LoadPoints(double** meas, int numpoint ,double** nom, int numNompoint, int cols);//获取meas&nom point
 extern "C" __declspec(dllexport) bool CalcBestFit(int BestFitType, int fitToMiddleOfZone, int Transfit, bool noRotate,int rotfit=0, int useNominal=0);
+extern "C" __declspec(dllexport) bool GetDev(double*& outdev, double& maxdev, double& mindev, int& size);
+extern "C" __declspec(dllexport) bool GetFitResult(int report, double& x, double& y, double& ang);
+extern "C" __declspec(dllexport) void FreeMemory(double* outdev);
+
 
 
 

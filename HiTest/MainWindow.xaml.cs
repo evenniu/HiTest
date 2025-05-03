@@ -38,7 +38,7 @@ namespace HiTest
             {
                 // 分割每一行的数据
                 string[] values = line.Split(new char[] { ' ', ',', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if(values.Length < 6)
+                if (values.Length < 3)
                 {
                     continue;
                 }
@@ -115,10 +115,10 @@ namespace HiTest
         {
             InitializeComponent();
             ImportSimleDLL.CreateSimple();
-            string filePath = "./test/meas.xyz";
+            string filePath = "./Calypso/mes.txt";
             List<double[]> measData = ReadDataFromFile(filePath);
            
-            filePath = "./test/nom.xyz";
+            filePath = "./Calypso/nom.txt";
             List<double[]> nomData = ReadDataFromFile(filePath);
             IntPtr ptr_MeasPoints = IntPtr.Zero;
             IntPtr ptr_NomPoints = IntPtr.Zero;

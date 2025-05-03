@@ -6,22 +6,21 @@ namespace Hexagon
 namespace Blade
 {
 
-Eigen::Isometry2d toIsometry2d()
+Eigen::Isometry2d toIsometry2d(const CAlignment& input)
 {
-  //if(input.n != 2)
-  //{
-  //  throw std::logic_error("It does not make sense to convert a 3D CAlignment into an Eigen::Isometry2d");
-  //}
-  //const Eigen::Vector2d b(input.m_borig[0], input.m_borig[1]);
-  //const Eigen::Vector2d m(input.m_morig[0], input.m_morig[1]);
-  //Eigen::Matrix2d R;
-  //R << input.m_mat[0][0], input.m_mat[0][1], input.m_mat[1][0], input.m_mat[1][1];
+  if(input.n != 2)
+  {
+    throw std::logic_error("It does not make sense to convert a 3D CAlignment into an Eigen::Isometry2d");
+  }
+  const Eigen::Vector2d b(input.m_borig[0], input.m_borig[1]);
+  const Eigen::Vector2d m(input.m_morig[0], input.m_morig[1]);
+  Eigen::Matrix2d R;
+  R << input.m_mat[0][0], input.m_mat[0][1], input.m_mat[1][0], input.m_mat[1][1];
   Eigen::Isometry2d result = Eigen::Isometry2d::Identity();
-  //result.translation() = b - R * m;
-  //result.linear() = R;
+  result.translation() = b - R * m;
+  result.linear() = R;
   return result;
 }
-
 
 CAlignment toCAlignment(const Eigen::Isometry2d& nominalToMeasuredTransformation)
 {

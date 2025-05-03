@@ -240,9 +240,9 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
     bt0 = bt1;
     bt1 += td;
     CalcPoint(xy, bt1, tanv);
-   normalize(tanv,tanv);
+    normalize(tanv,tanv);
     d0 = d1;
-   d1 = dot(nv,tanv);
+    d1 = dot(nv,tanv);
     if (dot(tv,tanv) < 0.0)  // pointing in wrong direction
       continue;
 
@@ -255,7 +255,7 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
         ep[1] = xy[1];
       }
       if (debug)
-     //   bugout(0, L"MatchTan landed right on it!");
+        bugout(0, L"MatchTan landed right on it!");
       return 1;
     }
 
@@ -269,7 +269,7 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
   if (i == 16)   // not there
   {
     if (debug)
-    //  bugout(0, L"MatchTan did not find bracket!");
+      bugout(0, L"MatchTan did not find bracket!");
     return 0;
   }
 
@@ -287,8 +287,8 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
         ep[1] = xy[1];
       }
 
-    //  if (debug)
-   //     bugout(0, L"MatchTan found it.  dot product %f!", de);
+      if (debug)
+        bugout(0, L"MatchTan found it.  dot product %f!", de);
 
       return 1;
     }
@@ -312,7 +312,7 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
   }
 
   if (debug)
-//    bugout(0, L"MatchTan fell through cracks!  Last de was %lf", de);
+    bugout(0, L"MatchTan fell through cracks!  Last de was %lf", de);
   return 1;
 }
 
@@ -323,167 +323,168 @@ int CCurve::MatchTan(double *tv, double *et, double *ep, double pt0, double pt1,
 int ACamberPoint(CCurve *a, CCurve *b, double *cp, double *p1, double *p2,
                  double *r1, double ta, double tb0, double tb1, double *tb)
 {
-    double t = 0.0, lastt, r2 = 0.0, n1[3], n2[3], v1[3], v2[3];
+  double t=0.0,lastt,r2=0.0,n1[3],n2[3],v1[3],v2[3];
 
-    if (tb0 > tb1)
+  if (tb0 > tb1)
+  {
+    double tmp = tb0;
+    tb0 = tb1;
+    tb1 = tmp;
+  }
+
+  a->CalcPoint(p1,ta,v1);
+  //bugout(8, _T("10 %f %f A (ta %f t0 %f t1 %f"), p1[0], p1[1], ta, a->T0(), a->T1());
+
+  n1[0] = v1[1];    // construct normal vector
+  n1[1] = -v1[0];
+  normalize(n1,n1);      // make a unit vector
+
+  b->ClosestPoint(p1,p2,0,v2,tb0,tb1,50);  // try closest point instead
+
+  n2[0] = p2[0] - p1[0];
+  n2[1] = p2[1] - p1[1];
+  normalize(n2, n2);
+
+  bool isU = false;
+
+  if (fabs(dot(n1, n2)) < 0.966)  // two vectors are more than about 15 degrees apart
+  {
+    // try line intersection instead
+    double bt;
+    if (b->LineIntersect(p1, n1, p2,tb0, tb1, &bt))
+      b->CalcPoint(p2, bt, v2);
+    else
     {
-        double tmp = tb0;
-        tb0 = tb1;
-        tb1 = tmp;
+      // may be inside the "U shape of an end.  If neither of the above looks good, see which end
+      // seems closer to the line defined by p1 and n1 and try seeding with that.
+      double tp0[2], tp1[2], tv0[2], tv1[2];
+
+      b->CalcPoint(tp0, tb0, tv0);
+      b->CalcPoint(tp1, tb1, tv1);
+      if (dist(tp0, p1) < dist(tp1, p1))
+      {
+        p2[0] = tp0[0];
+        p2[1] = tp0[1];
+        v2[0] = tv0[0];
+        v2[1] = tv0[1];
+      }
+      else
+      {
+        p2[0] = tp1[0];
+        p2[1] = tp1[1];
+        v2[0] = tv1[0];
+        v2[1] = tv1[1];
+      }
+
+      isU = true;
+    }
+  }
+
+  //bugout(8, _T("10 %f %f Bi (tb0 %f tb1 %f period %f)"), p2[0], p2[1], tb0, tb1, b->Period());
+  //bugout(8, _T("9 %f %f %f %f A to Bi"), p1[0], p1[1], p2[0], p2[1]);
+
+  n2[0] = v2[1];    // construct normal vector
+  n2[1] = -v2[0];
+  normalize(n2,n2);      // make a unit vector
+  //bugout(9, _T("9 %f %f %f %f"), p2[0], p2[1], p2[0]+.2*n2[0], p2[1]+.2*n2[1]);
+
+  // initial guess for point on mean camber
+  bool useMidPoint = false;
+  if (!int_line_line(p1[0], p1[1], n1[0], n1[1], p2[0], p2[1], n2[0], n2[1], &cp[0], &cp[1]))
+    useMidPoint = true;
+  else if (!isU)   // doing this for Bell, will this screw anyone else up?
+  {
+    double vc1[2], vc2[2];
+    vc1[0] = cp[0] - p1[0];
+    vc1[1] = cp[1] - p1[1];
+    vc2[0] = p2[0] - cp[0];
+    vc2[1] = p2[1] - cp[1];
+
+    if (dot(vc1, vc2) < 0.0)
+      useMidPoint = true;
+  }
+
+  if (useMidPoint)
+  {
+    cp[0] = 0.5*(p1[0] + p2[0]);
+    cp[1] = 0.5*(p1[1] + p2[1]);
+  }
+  //bugout(8,_T("10 %f %f Gi"), cp[0], cp[1]);
+
+  if (n1[0]*(p2[0] - p1[0]) + n1[1]*(p2[1] - p1[1]) < 0.0)
+  {
+    n1[0] *= -1.0;
+    n1[1] *= -1.0;
+  }
+
+  double last_alpha = 1.0e10;
+  double epsilon = 1.0e-7;
+  if (!a->IsEnglish())  // mm
+    epsilon *= 25;
+
+  lastt = 1.0e10;
+  int j;
+  for (j=0; j<30; j++)   // iteration loop
+  {
+    *r1 = _hypot(cp[0] - p1[0],cp[1] - p1[1]);
+    r2 = b->ClosestPoint(cp,p2,&t,v2,tb0,tb1, j == 0 ? 500 : -1);
+
+    if (fabs(t - lastt) < 1.0e-8)  // same as last guess
+    {
+      if ((fabs(t - tb0) < 1.0e-6) || (fabs(t - tb1) < 1.0e-6))
+        return OFF_EDGE;
     }
 
-    a->CalcPoint(p1, ta, v1);
-    bugout(0, L"10 %f %f A (ta %f t0 %f t1 %f", p1[0], p1[1], ta, a->T0(), a->T1());
+    lastt = t;
 
-    n1[0] = v1[1];    // construct normal vector
-    n1[1] = -v1[0];
-    normalize(n1, n1);      // make a unit vector
-
-    b->ClosestPoint(p1, p2, 0, v2, tb0, tb1, 50);  // try closest point instead
-
-    n2[0] = p2[0] - p1[0];
-    n2[1] = p2[1] - p1[1];
-    normalize(n2, n2);
-
-    bool isU = false;
-
-    if (fabs(dot(n1, n2)) < 0.966)  // two vectors are more than about 15 degrees apart
+    if (j > 0 && fabs(*r1 - r2) < epsilon)
     {
-        // try line intersection instead
-        double bt;
-        if (b->LineIntersect(p1, n1, p2, tb0, tb1, &bt))
-            b->CalcPoint(p2, bt, v2);
-        else
-        {
-            // may be inside the "U shape of an end.  If neither of the above looks good, see which end
-            // seems closer to the line defined by p1 and n1 and try seeding with that.
-            double tp0[2], tp1[2], tv0[2], tv1[2];
-
-            b->CalcPoint(tp0, tb0, tv0);
-            b->CalcPoint(tp1, tb1, tv1);
-            if (dist(tp0, p1) < dist(tp1, p1))
-            {
-                p2[0] = tp0[0];
-                p2[1] = tp0[1];
-                v2[0] = tv0[0];
-                v2[1] = tv0[1];
-            }
-            else
-            {
-                p2[0] = tp1[0];
-                p2[1] = tp1[1];
-                v2[0] = tv1[0];
-                v2[1] = tv1[1];
-            }
-
-            isU = true;
-        }
-    }
-
-    //bugout(8, _T("10 %f %f Bi (tb0 %f tb1 %f period %f)"), p2[0], p2[1], tb0, tb1, b->Period());
-    //bugout(8, _T("9 %f %f %f %f A to Bi"), p1[0], p1[1], p2[0], p2[1]);
-
-    n2[0] = v2[1];    // construct normal vector
-    n2[1] = -v2[0];
-    normalize(n2, n2);      // make a unit vector
-    //bugout(9, _T("9 %f %f %f %f"), p2[0], p2[1], p2[0]+.2*n2[0], p2[1]+.2*n2[1]);
-
-    // initial guess for point on mean camber
-    bool useMidPoint = false;
-    if (!int_line_line(p1[0], p1[1], n1[0], n1[1], p2[0], p2[1], n2[0], n2[1], &cp[0], &cp[1]))
-        useMidPoint = true;
-    else if (!isU)   // doing this for Bell, will this screw anyone else up?
-    {
-        double vc1[2], vc2[2];
-        vc1[0] = cp[0] - p1[0];
-        vc1[1] = cp[1] - p1[1];
-        vc2[0] = p2[0] - cp[0];
-        vc2[1] = p2[1] - cp[1];
-
-        if (dot(vc1, vc2) < 0.0)
-            useMidPoint = true;
-    }
-
-    if (useMidPoint)
-    {
-        cp[0] = 0.5 * (p1[0] + p2[0]);
-        cp[1] = 0.5 * (p1[1] + p2[1]);
-    }
-    //bugout(8,_T("10 %f %f Gi"), cp[0], cp[1]);
-
-    if (n1[0] * (p2[0] - p1[0]) + n1[1] * (p2[1] - p1[1]) < 0.0)
-    {
-        n1[0] *= -1.0;
-        n1[1] *= -1.0;
-    }
-
-    double last_alpha = 1.0e10;
-    double epsilon = 1.0e-7;
-    if (!a->IsEnglish())  // mm
-        epsilon *= 25;
-
-    lastt = 1.0e10;
-    int j;
-    for (j = 0; j < 30; j++)   // iteration loop
-    {
-        *r1 = _hypot(cp[0] - p1[0], cp[1] - p1[1]);
-        r2 = b->ClosestPoint(cp, p2, &t, v2, tb0, tb1, j == 0 ? 500 : -1);
-
-        if (fabs(t - lastt) < 1.0e-8)  // same as last guess
-        {
-            if ((fabs(t - tb0) < 1.0e-6) || (fabs(t - tb1) < 1.0e-6))
-                return OFF_EDGE;
-        }
-
-        lastt = t;
-
-        if (j > 0 && fabs(*r1 - r2) < epsilon)
-        {
-            bugout(8, L"8 %f %f %f %f r1 %f r2 %f", cp[0], cp[1], p1[0], p1[1], *r1, r2);
-            bugout(8, L"9 %f %f %f %f r1 %f r2 %f", cp[0], cp[1], p2[0], p2[1], *r1, r2);
-            if (tb)
-                *tb = t;
-            *r1 = 0.5 * (*r1 + r2);
-
-            return 0;
-        }
-
-        n2[0] = v2[1];        // construct normal vector
-        n2[1] = -v2[0];
-        normalize(n2, n2);          // normalize tangent vector
-        if (dot(n1, n2) > 0.0) // oppose each other
-        {
-            n2[0] *= -1.0;
-            n2[1] *= -1.0;
-        }
-
-        // determine alpha so that cp = p0 + alpha*n1 is closer
-
-        double den = 1.0 - dot(n1, n2);
-        if (fabs(den) < 1.0e-18)
-            return SMALL_DEN;
-
-        double num = n2[0] * (p1[0] - p2[0]) + n2[1] * (p1[1] - p2[1]);
-
-        double alpha = num / den;
-
-        if (j > 3 && fabs(alpha - last_alpha) < 1.0e-5)  // going nowhere
-            alpha = 0.5 * (*r1 + r2);  // stuck at a branch? try this
-
-        if (j % 5 == 4)  // cyclic branch problem??
-            alpha = 0.5 * (*r1 + r2);  // stuck at a branch? try this
-
-        last_alpha = alpha;
-        cp[0] = p1[0] + alpha * n1[0];
-        cp[1] = p1[1] + alpha * n1[1];
-    }
-
-    if (tb)
+      bugout(8, L"8 %f %f %f %f r1 %f r2 %f", cp[0], cp[1], p1[0], p1[1], *r1, r2);
+      bugout(8, L"9 %f %f %f %f r1 %f r2 %f", cp[0], cp[1], p2[0], p2[1], *r1, r2);
+      if (tb)
         *tb = t;
+      *r1 = 0.5*(*r1 + r2);
 
-    bugout(8, L"8 %f %f %f %f r1 %f r2 %f (NO CONVERGE)", cp[0], cp[1], p1[0], p1[1], *r1, r2);
-    bugout(8, L"9 %f %f %f %f r1 %f r2 %f (NO CONVERGE)", cp[0], cp[1], p2[0], p2[1], *r1, r2);
-    bugout(8, L"10 %f %f NC", cp[0], cp[1]);
+      return 0;
+    }
+
+    n2[0] = v2[1];        // construct normal vector
+    n2[1] = -v2[0];
+    normalize(n2,n2);          // normalize tangent vector
+    if (dot(n1,n2) > 0.0) // oppose each other
+    {
+      n2[0] *= -1.0;
+      n2[1] *= -1.0;
+    }
+
+    // determine alpha so that cp = p0 + alpha*n1 is closer
+
+    double den = 1.0 - dot(n1,n2);
+    if (fabs(den) < 1.0e-18)
+      return SMALL_DEN;
+
+    double num = n2[0]*(p1[0] - p2[0]) + n2[1]*(p1[1] - p2[1]);
+
+    double alpha = num/den;
+
+    if (j > 3 && fabs(alpha - last_alpha) < 1.0e-5)  // going nowhere
+      alpha = 0.5*(*r1 + r2);  // stuck at a branch? try this
+
+    if (j % 5 == 4)  // cyclic branch problem??
+      alpha = 0.5*(*r1 + r2);  // stuck at a branch? try this
+
+    last_alpha = alpha;
+    cp[0] = p1[0] + alpha*n1[0];
+    cp[1] = p1[1] + alpha*n1[1];
+  }
+
+  if (tb)
+    *tb = t;
+
+  bugout(8, L"8 %f %f %f %f r1 %f r2 %f (NO CONVERGE)", cp[0], cp[1], p1[0], p1[1], *r1, r2);
+  bugout(8, L"9 %f %f %f %f r1 %f r2 %f (NO CONVERGE)", cp[0], cp[1], p2[0], p2[1], *r1, r2);
+  bugout(8, L"10 %f %f NC", cp[0], cp[1]);
+
   return NO_CONVERGE;
 }
 
@@ -528,16 +529,20 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
     double xxx[2], yyy[2];
     a->CalcPoint(xxx,ta0);
     b->CalcPoint(yyy,tb1);
+    bugout(9,L"9 %f %f %f %f ta0=%f tb1=%f same curve", xxx[0], xxx[1], yyy[0], yyy[1], ta0, tb1);
     a->CalcPoint(xxx,ta1);
     b->CalcPoint(yyy,tb0);
+    bugout(9,L"9 %f %f %f %f ta1=%f tb0=%f same curve", xxx[0], xxx[1], yyy[0], yyy[1], ta1, tb0);
   }
   else
   {
     double xxx[2], yyy[2];
     a->CalcPoint(xxx,ta0);
     a->CalcPoint(yyy,ta1);
+    bugout(9,L"9 %f %f %f %f ta0=%f ta1=%f diff curves", xxx[0], xxx[1], yyy[0], yyy[1], ta0, ta1);
     b->CalcPoint(xxx,tb0);
     b->CalcPoint(yyy,tb1);
+    bugout(9,L"9 %f %f %f %f tb0=%f tb1=%f diff curves", xxx[0], xxx[1], yyy[0], yyy[1], tb0, tb1);
   }
   ts = ta0;
   te = ta1;
@@ -563,6 +568,7 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
     switch (rv)
     {
     case 0:  // good
+      bugout(8, L"10 %f %f G", cp[0], cp[1]);
       // x[ng] = cp[0];  done below
       // y[ng] = cp[1];
       // ng++;
@@ -570,7 +576,7 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
       break;
     case OFF_EDGE:  // trying to drive off the edge
       {
-        //bugout(8, L"OFF_EDGE");
+        bugout(8, L"OFF_EDGE");
         if (i == 0)   // missed first point, readjust on the fly
         {
           if (retry_start%5 == 1)
@@ -595,7 +601,7 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
         continue;
       }
     default:        // problems, but not driving of edge
-      //bugout(8, L"10 %f %f OE", cp[0], cp[1]);
+      bugout(8, L"10 %f %f OE", cp[0], cp[1]);
       
       double d1 = dist(cp, p1);
       double d2 = dist(cp, p2);
@@ -630,22 +636,22 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
         l2 = normalize(v2,v2);
         if (dot(v1, v2) < 0.0)  // reversed direction
         {
-            // bell helicopter check, blips on the side of the blade cause a reversal.
-            // if we are still a ways from the terminating point, then don't jump out, but remove that point.
-            if (useextreme)
+          // bell helicopter check, blips on the side of the blade cause a reversal.
+          // if we are still a ways from the terminating point, then don't jump out, but remove that point.
+          if (useextreme)
+          {
+            double d = dist(extr, cp);
+            if (d > 1.5*r)  // skip this point, but keep on trying.
             {
-                double d = dist(extr, cp);
-                if (d > 1.5 * r)  // skip this point, but keep on trying.
-                {
-                    continue;
-                }
+              continue;
             }
-            break;
+          }
+          break;
         }
         if (l2 < 1.0e-5)  // very small jump
-            break;
-        if (dot(v1, v2) < 0.9 && l2 / l1 < 0.2)  // getting haywire
-            break;
+          break;
+        if (dot(v1, v2) < 0.9 && l2/l1 < 0.2)  // getting haywire
+          break;
       }
 
       if (useextreme)
@@ -762,7 +768,7 @@ int CamberPoints(int n, CCurve *a, CCurve *b, double *x, double *y, double ta0, 
       {
         x[ng-1] = proj[0];
         y[ng-1] = proj[1];
-       // bugout(8, L"10 %f %f F", x[ng-1], y[ng-1]);
+        bugout(8, L"10 %f %f F", x[ng-1], y[ng-1]);
       }
     }
   }
@@ -774,7 +780,7 @@ int CCurve::EndCamber(int n, double *x, double *y, int useextreme)
 {
   int i;
   int type = Type();
-  bugout(0, L"EndCamber:n=%d useextreme %d",n, useextreme);
+  //bugout(8, "EndCamber useextreme %d", useextreme);
 
   if (type == CIRCLE_TYPE || type == POINT_TYPE)  // should not be here
     return 0;
@@ -796,7 +802,6 @@ int CCurve::EndCamber(int n, double *x, double *y, int useextreme)
   {
     double endvec[3];
     double dir[2],mid[2],end[2],p0[3],p1[3];
-    
     CalcPoint(p0, T0());
     CalcPoint(p1, T1());
     
@@ -884,16 +889,10 @@ void CCurve::BugOut(int numPoints, double t0, double t1)
   for(k=1; k<=numPoints; k++)
   {
     t += td;
-    if (k % 2 == 1)
-    {
-      CalcPoint(p2,t);
-      //bugout(0, L"8 %f %f %f %f", p1[0], p1[1], p2[0], p2[1]);
-    }
-    else
-    {
+
       CalcPoint(p1,t);
-      //bugout(0, L"9 %f %f %f %f", p1[0], p1[1], p2[0], p2[1]);
-    }
+      bugout(0, L"%f %f 0 0 0 0", p1[0], p1[1]);
+    
   }
 }
 

@@ -59,8 +59,9 @@ Eigen::ArrayXb tIsInSubcurve_eigen(const Eigen::Ref<const Eigen::VectorXd>& t,
   return wrapToAbove(t, subCurve.t0(), wholePeriod).array() < subCurve.t1();
 }
 
-Eigen::Isometry2d toIsometry2d();
+Eigen::Isometry2d toIsometry2d(const CAlignment& input);
 
 CAlignment toCAlignment(const Eigen::Isometry2d& nominalToMeasuredTransformation);
+
 } // namespace Blade
 } // namespace Hexagon

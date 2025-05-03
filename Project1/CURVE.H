@@ -39,7 +39,7 @@ protected:
   bool m_isEnglish;       // english or metric?
   double m_period;        // only for periodic curves and subcurves
   double m_extreme;       // t value for extreme points, used for LE and TE
-   CAlignment *m_palign;   // alignment to run calcs through (or null);
+  CAlignment *m_palign;   // alignment to run calcs through (or null);
 public:
 
 

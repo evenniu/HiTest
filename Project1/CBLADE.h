@@ -17,7 +17,7 @@ private:
 	bool m_nomValid;
 	bool m_measLoaded;
 	wchar_t m_mathFileName[MAXBUFSZ];
-	//CBestFit* m_pBestFit;
+	CBestFit* m_pBestFit;
 	//CBestFit* m_pBestFitLE;
 public:
 
@@ -40,10 +40,10 @@ public:
 	{
 		return m_measLoaded;
 	}
-	//CBestFit* GetBestFit()
-	//{
-	//	return m_pBestFit;
-	//}
+  CBestFit *GetBestFit()
+  {
+    return m_pBestFit;
+  }
 
 	//CBestFit* GetBestFitLE()
 	//{

@@ -2,7 +2,7 @@
 #pragma warning(disable : 4714)
 
 #include "CurvePolygon.h"
-//#include "AlwaysAssert.h"
+#include "AlwaysAssert.h"
 #include "ArraySlicing.h"
 #include "TemplateHermiteSpline.h"
 #include "HermiteCurve.h"
@@ -86,10 +86,10 @@ Eigen::Matrix2Xd computeConvexHull(const Eigen::Ref<const Eigen::Matrix2Xd>& inp
     const int numberOfDimensions = 2;
     const int numberOfPoints = static_cast<int>(inputPoints.cols());
     const boolT isMalloc = 0;
-    const char* QHullCommand = "qhull Qt";
+    char* const QHullCommand = "qhull Qt";
     QHullMemoryDeallocator deallocator; // this object will handle QHull deallocation
     int returnValue = qh_new_qhull(numberOfDimensions, numberOfPoints, inputCopy.data(), isMalloc,
-                                   (char *)QHullCommand, NULL, stderr);
+                                   QHullCommand, NULL, stderr);
     if(returnValue)
     {
       throw std::runtime_error("Failed to compute convex hull.");
@@ -178,10 +178,10 @@ Hexagon::Blade::VoronoiDiagram computeVoronoiDiagram(const Eigen::Ref<const Eige
     const int numberOfDimensions = 2;
     const int numberOfPoints = static_cast<int>(inputPoints.cols());
     const boolT isMalloc = 0;
-    const  char*  QHullCommand = "qhull v Qbb Qc Qz Qt";
+    char* const QHullCommand = "qhull v Qbb Qc Qz Qt";
     QHullMemoryDeallocator deallocator; // this object will handle QHull deallocation
     int returnValue = qh_new_qhull(numberOfDimensions, numberOfPoints, inputCopy.data(), isMalloc,
-                                   (char *)QHullCommand, NULL, stderr);
+                                   QHullCommand, NULL, stderr);
     if(returnValue)
     {
       throw std::runtime_error("Failed to compute Voronoi diagram.");
@@ -245,10 +245,10 @@ Hexagon::Blade::VoronoiDiagram computeFarthestSiteVoronoiDiagram(const Eigen::Re
     const int numberOfDimensions = 2;
     const int numberOfPoints = static_cast<int>(inputPoints.cols());
     const boolT isMalloc = 0;
-    const char* QHullCommand = "qhull v Qbb Qt Qu"; // the Qu makes the Voronoi diagram be farthest-site
+    char* const QHullCommand = "qhull v Qbb Qt Qu"; // the Qu makes the Voronoi diagram be farthest-site
     QHullMemoryDeallocator deallocator; // this object will handle QHull deallocation
     int returnValue = qh_new_qhull(numberOfDimensions, numberOfPoints, inputCopy.data(), isMalloc,
-        (char *)QHullCommand, NULL, stderr);
+                                   QHullCommand, NULL, stderr);
     if(returnValue)
     {
       throw std::runtime_error("Failed to compute Voronoi diagram.");
@@ -1010,7 +1010,7 @@ Camber camber(const Curve<2>& curve, const Curve<2>& convexCurve, const Curve<2>
       k++;
     }
   }
-  //alwaysAssert(k == pointsN);
+  alwaysAssert(k == pointsN);
 
   // label the points according to their subcurves
   // -1 for concave side, +1 for convex side, and 0 for neither
@@ -1123,7 +1123,7 @@ Camber camber(const Curve<2>& curve, const Curve<2>& convexCurve, const Curve<2>
   // assemble the (unsorted) results structure
   Camber unsortedResult;
   ptrdiff_t N = preciseCamberPoints.size();
-  //alwaysAssert(N > 0);
+  alwaysAssert(N > 0);
   unsortedResult.camberPoints.resize(2, N);
   unsortedResult.camberRadii.resize(N);
   unsortedResult.camberTangents.resize(2, N);
@@ -1159,10 +1159,10 @@ Camber camber(const Curve<2>& curve, const Curve<2>& convexCurve, const Curve<2>
     }
 
     // check sanity
-    //alwaysAssert(convexT.size() > 0);
-    //alwaysAssert(convexT.size() < 3);
-    //alwaysAssert(concaveT.size() > 0);
-    //alwaysAssert(concaveT.size() < 3);
+    alwaysAssert(convexT.size() > 0);
+    alwaysAssert(convexT.size() < 3);
+    alwaysAssert(concaveT.size() > 0);
+    alwaysAssert(concaveT.size() < 3);
 
     tConvexMinusConcave[i] = mean(convexT) - mean(concaveT);
   }

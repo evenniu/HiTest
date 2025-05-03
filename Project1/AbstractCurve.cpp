@@ -41,7 +41,7 @@ DLLEXPORT int extreme(const Curve<2>& curve, const double* v, double* et, double
   // for blades with extreme curve, there maybe be more than one initial solution.
   // if there are then select the one that is "more extreme".
 
-  //normalize(nv, v);
+  normalize(nv, v);
   const int numberOfStartingPointsForSearching = 1000;
   td = (pt1 - pt0) / (numberOfStartingPointsForSearching - 1);
   bt1 = pt0 - td;
@@ -59,9 +59,9 @@ DLLEXPORT int extreme(const Curve<2>& curve, const double* v, double* et, double
       ep0[1] = xyz[1];
     }
 
-    //normalize(tv, tv);
+    normalize(tv, tv);
     d0 = d1;
-    /*d1 = dot(nv, tv);*/
+    d1 = dot(nv, tv);
 
     if(fabs(d1) < 1.0e-6) // landed right on it!
     {
@@ -86,21 +86,104 @@ DLLEXPORT int extreme(const Curve<2>& curve, const double* v, double* et, double
     }
   }
 
-  
+  if(numSol == 0) // no bracketing interval found
+  {
+    if(endOK)
+    {
+      if(projdist(ep0, nv, tv) > projdist(xyz, nv, tv)) // point zero was more extreme
+      {
+        *et = pt0;
+        ep[0] = ep0[0];
+        ep[1] = ep0[1];
+      }
+      else
+      {
+        *et = pt1;
+        ep[0] = xyz[0];
+        ep[1] = xyz[1];
+      }
+      return 1;
+    }
+    return 0;
+  }
+  else if(numSol == 1) // only one bracket found, use that
+  {
+    bt0 = sbt0[0];
+    bt1 = sbt1[0];
+    d0 = sd0[0];
+  }
+  else // multiple brackets found
+  {
+    int bi = 0;
+    double bd = -1.0e10;
 
- 
+    for(i = 0; i < numSol; i++)
+    {
+      double test1[2], test2[2];
+      curve.evaluate(sbt0 + i, 1, test1, nullptr, nullptr);
+      curve.evaluate(sbt1 + i, 1, test2, nullptr, nullptr);
 
+      double d = projdist(xyz, v, test1);
+      if(d > bd)
+      {
+        bi = i;
+        bd = d;
+      }
+
+      d = projdist(xyz, v, test2);
+      if(d > bd)
+      {
+        bi = i;
+        bd = d;
+      }
+    }
+
+    bt0 = sbt0[bi];
+    bt1 = sbt1[bi];
+    d0 = sd0[bi];
+  }
+
+  while(bt1 - bt0 > 1.0e-5) // binary search
+  {
+    *et = 0.5 * (bt0 + bt1);
+    curve.evaluate(et, 1, xyz, tv, nullptr);
+    normalize(tv, tv);
+    de = dot(nv, tv);
+    if(fabs(de) < 1.0e-4) // close enough
+    {
+      if(ep)
+      {
+        ep[0] = xyz[0];
+        ep[1] = xyz[1];
+      }
+      return 1;
+    }
+    if(d0 * de < 0.0) // solution in left half
+    {
+      bt1 = *et;
+      // d1 = de; not used???  problem here???
+    }
+    else // solution in right half
+    {
+      bt0 = *et;
+      d0 = de;
+    }
+  }
 
   // shouldn't be here, but go with whatever
-
+  if(ep)
+  {
+    ep[0] = xyz[0];
+    ep[1] = xyz[1];
+  }
   return 1;
 }
 
 DLLEXPORT double wrapToAbove(const double t, const double rangeStart, const double wholePeriod)
 {
-    const double result = 0;/* = std::remainder(t - rangeStart, wholePeriod) + rangeStart;
+  const double result = std::remainder(t - rangeStart, wholePeriod) + rangeStart;
   if(result < rangeStart)
-    return result + wholePeriod;*/
+    return result + wholePeriod;
   return result;
 }
 
@@ -217,7 +300,78 @@ DLLEXPORT int lineIntersection(const Curve<2>& curve, const double* xy, const do
     }
   }
 
-  //
+  // construct a list of seed points
+  Eigen::VectorXd seedT = Eigen::VectorXd::LinSpaced(numberOfSeeds, t0, t1);
+  if(useTSolutionAsASeed)
+  {
+    seedT.conservativeResize(numberOfSeeds + 1);
+    seedT[numberOfSeeds] = *tsol;
+  }
+
+  // define a function whose zero corresponds to the intersection line
+  Eigen::Map<const Eigen::Vector2d> point(xy);
+  Eigen::Map<const Eigen::Vector2d> vector(ij);
+  Eigen::Vector2d normal(vector[1], -vector[0]);
+  auto f = [&curve, &point, &normal](double t) -> double {
+    Eigen::Vector2d curvePoint;
+    curve.evaluate(&t, 1, curvePoint.data(), nullptr, nullptr);
+    return (curvePoint - point).dot(normal);
+  };
+
+  // find the roots of this function
+  const double infinity = std::numeric_limits<double>::infinity();
+  Eigen::Vector2d intersectionPoint(infinity, infinity);
+  double intersectionT = infinity;
+  double intersectionDistance = infinity;
+  std::sort(seedT.data(), seedT.data() + seedT.size());
+  for(ptrdiff_t i = 0; i < seedT.size() - 1; i++)
+  {
+    const double fa = f(seedT[i]);
+    const double fb = f(seedT[i + 1]);
+    if(fa * fb <= 0.0)
+    {
+      // if there is an intersection in the range, find it
+      double t = Hexagon::MetrologyBuildingBlocks::scalarZero_noGuess(
+          f, seedT[i], seedT[i + 1], fa, fb, Hexagon::MetrologyBuildingBlocks::rationalInterpolationStep);
+
+      // see how far away the intersection is
+      Eigen::Vector2d solutionPoint;
+      curve.evaluate(&t, 1, solutionPoint.data(), nullptr, nullptr);
+      double signedDistanceToSolution = (solutionPoint - point).dot(vector);
+      bool rayCriterionSatisfied =
+          !isRay || signedDistanceToSolution >= 0.0; // if isRay==true, we require signedDistanceToSolution>=0.0
+      double distanceToSolution = (solutionPoint - point).norm();
+
+      // update to the best solution so far
+      if(distanceToSolution < intersectionDistance && rayCriterionSatisfied)
+      {
+        intersectionT = t;
+        intersectionDistance = distanceToSolution;
+        intersectionPoint = solutionPoint;
+      }
+    }
+  }
+
+  // all done: is there a solution at all?
+  if(!std::isfinite(intersectionT))
+  {
+    return 0;
+  }
+
+  // if there is a solution, fill it out
+  if(sol)
+  {
+    Eigen::Map<Eigen::Vector2d> mappedSolution(sol);
+    mappedSolution = intersectionPoint;
+  }
+  if(tsol)
+  {
+    *tsol = intersectionT;
+  }
+  if(dist)
+  {
+    *dist = intersectionDistance;
+  }
   return 1;
 }
 
@@ -248,7 +402,77 @@ DLLEXPORT double closestPoint(const Curve<2>& curve, const double* tgt, double* 
     }
   }
 
-  return 0;
+  // construct a list of seed points
+  Eigen::VectorXd seedT = Eigen::VectorXd::LinSpaced(numberOfSeeds, pt0, pt1);
+  if(useBestTAsASeed)
+  {
+    seedT.conservativeResize(numberOfSeeds + 1);
+    seedT[numberOfSeeds] = *bestt;
+  }
+  Eigen::Matrix2Xd seedPoints(2, seedT.size());
+  curve.evaluate(seedT.data(), seedT.size(), seedPoints.data(), nullptr, nullptr);
+
+  // compute distances to the target point
+  Eigen::Map<const Eigen::Vector2d> target(tgt);
+  Eigen::VectorXd distance = (seedPoints.colwise() - target).colwise().norm().transpose();
+
+  // construct a window surrounding the minimal point
+  ptrdiff_t minIndex;
+  distance.minCoeff(&minIndex);
+  double minimalDistanceT = seedT[minIndex];
+  double delta = (pt1 - pt0) / (static_cast<double>(numberOfSeeds - 1));
+  double lowT = std::max(tLowerBound, minimalDistanceT - delta);
+  double highT = std::min(tUpperBound, minimalDistanceT + delta);
+
+  // define a distance-squared function and its gradient
+  auto distanceSquared = [&](double t) -> std::pair<double, double> {
+    Eigen::Vector2d point;
+    Eigen::Vector2d derivative;
+    curve.evaluate(&t, 1, point.data(), derivative.data(), nullptr);
+    const double result = (target - point).squaredNorm();
+    const double resultDerivative = -2.0 * (target - point).dot(derivative);
+    return std::make_pair(result, resultDerivative);
+  };
+  auto distanceSquaredGradient = [&curve, &target](double t) -> double {
+    Eigen::Vector2d point;
+    Eigen::Vector2d derivative;
+    curve.evaluate(&t, 1, point.data(), derivative.data(), nullptr);
+    return -2.0 * (target - point).dot(derivative);
+  };
+
+  // find the closest point; for now the bisection method is probably fine
+  const double f_low = distanceSquaredGradient(lowT);
+  const double f_high = distanceSquaredGradient(highT);
+  double closestT;
+  if(f_low * f_high <= 0.0)
+  {
+    closestT = Hexagon::MetrologyBuildingBlocks::scalarZero_noGuess(
+        distanceSquaredGradient, lowT, highT, f_low, f_high,
+        Hexagon::MetrologyBuildingBlocks::rationalInterpolationStep);
+  }
+  else
+  {
+    closestT = Hexagon::MetrologyBuildingBlocks::findScalarMinimum(distanceSquared, lowT, 0.5 * (lowT + highT), highT);
+  }
+
+  // all done
+  curve.evaluate(&closestT, 1, bestxyz, tangent, nullptr);
+  if(bestt)
+  {
+    *bestt = closestT;
+    if(curve.isPeriodic())
+    {
+      while(*bestt >= curve.t1())
+      {
+        *bestt -= curve.period();
+      }
+      while(*bestt < curve.t0())
+      {
+        *bestt += curve.period();
+      }
+    }
+  }
+  return (Eigen::Map<const Eigen::Vector2d>(bestxyz) - target).norm();
 }
 
 // create a function that looks for t-values of closest approach to a point
@@ -256,7 +480,7 @@ template <class TreeType>
 double findNearestTValue_periodic(const Curve<2>& curve, const TreeType& tree, ptrdiff_t numberOfPointsInTree,
                                   const double* treeTValues, const double* point)
 {
-  //alwaysAssert(curve.isPeriodic());
+  alwaysAssert(curve.isPeriodic());
   ptrdiff_t index;
   double squaredDistance;
   tree.query(point, 1, &index, &squaredDistance);
@@ -271,7 +495,7 @@ template <class TreeType>
 double findNearestTValue_nonperiodic(const Curve<2>& curve, const TreeType& tree, ptrdiff_t numberOfPointsInTree,
                                      const double* treeTValues, const double* point)
 {
-  //alwaysAssert(!curve.isPeriodic());
+  alwaysAssert(!curve.isPeriodic());
   ptrdiff_t index;
   double squaredDistance;
   tree.query(point, 1, &index, &squaredDistance);
@@ -299,7 +523,19 @@ double findNearestTValue(const Curve<2>& curve, const TreeType& tree, ptrdiff_t 
 DLLEXPORT void findClosestTValues(const Curve<2>& curve, double* outT, const double* inPoints, ptrdiff_t numberOfPoints)
 {
   // polygonalize the curve
- 
+  auto curvePolygon = polygonalizeWithT(curve, 2048, 1e-4);
+  const Eigen::MatrixX2d curvePoints = std::get<0>(curvePolygon).transpose();
+  const Eigen::VectorXd curveT = std::get<1>(curvePolygon);
+
+  // construct KD tree of the nominal curve
+  typedef nanoflann::KDTreeEigenMatrixAdaptor<Eigen::MatrixX2d, 2> KDTree;
+  KDTree kdtree(2 /*dimensions*/, curvePoints, 10 /*max leaf*/);
+
+  // find the closest t-values for each one
+  for(int j = 0; j < numberOfPoints; j++)
+  {
+    outT[j] = findNearestTValue(curve, kdtree, curveT.size(), curveT.data(), inPoints + 2 * j);
+  }
 }
 } // namespace Blade
 } // namespace Hexagon

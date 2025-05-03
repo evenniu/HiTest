@@ -28,7 +28,7 @@ CBlade::CBlade()
     m_nomValid = false;
     m_measLoaded = false;
     m_numSections = 0;
-    //m_pBestFit = NULL;
+    m_pBestFit = NULL;
     //m_pBestFitLE = NULL;
     m_section = NULL;
 }
@@ -37,7 +37,7 @@ CBlade::CBlade(wchar_t* mathFileName)
     m_nomValid = false;
     m_measLoaded = false;
     m_numSections = 0;
-    //m_pBestFit = NULL;
+    m_pBestFit = NULL;
     //m_pBestFitLE = NULL;
     m_section = NULL;
     wcscpy_s(m_mathFileName, mathFileName);
@@ -62,8 +62,8 @@ CBlade::~CBlade()
         delete[]m_section;
     }
 
-    //if (m_pBestFit)
-    //    delete m_pBestFit;
+    if (m_pBestFit)
+        delete m_pBestFit;
 
     //if (m_pBestFitLE)
     //    delete m_pBestFitLE;

@@ -49,7 +49,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -80,7 +80,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)HiTest\bin\Debug\</OutDir>
-    <LibraryPath>$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -117,17 +117,18 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;BLADEMATH_EXPORTS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;BLADEMATH_EXPORTS;_SCL_SECURE_NO_WARNINGS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.nanoflann.1.2.3\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Boost.1.67.0\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\include;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.4\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.nanoflann.1.2.3\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Boost.1.67.0\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\include;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DisableSpecificWarnings>6031;4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)packages\hexagon.thirdparty.protobufcpp_MD__v140_x64_Debug.3.3.0.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\bin\x64\Debug\v140\cdecl\libiomp5md.dlla;$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\bin\x64\Debug\v140\cdecl\knitro1111.dlla;$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\bin\x64\Debug\v140\cdecl\GDT.dlla;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(ProjectDir)..\packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Debug\cdecl\libqhull.lib;$(ProjectDir)..\packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl\GDT.lib;$(ProjectDir)..\packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl\GDT_CPlusPlusInterface.lib;$(ProjectDir)..\packages\hexagon.thirdparty.protobufcpp_MD__v140_x64_Debug.3.3.0.1\build\native\lib\x64\v140\Debug\cdecl\libprotobufd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\hexagon.thirdparty.protobufcpp_MD__v140_x64_Debug.3.3.0.1\build\native\lib\x64\v140\Debug\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libqhull.lib;GDT.lib;GDT_CPlusPlusInterface.lib;libprotobufd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -189,6 +190,7 @@
     <ClInclude Include="StringUtil.h" />
     <ClInclude Include="SUBCURVE.H" />
     <ClInclude Include="SVD.H" />
+    <ClInclude Include="targetver.h" />
     <ClInclude Include="TemplateHermiteSpline.h" />
     <ClInclude Include="ToleranceSection.h" />
     <ClInclude Include="VARTOL.H" />

@@ -191,7 +191,7 @@ HermiteOpenCurve::HermiteOpenCurve(FILE* fp, bool isEnglish) : CCurve()
   // check the descriptor
   wchar_t writtenDescriptor[fileDescriptorLength];
   fread(writtenDescriptor, sizeof(wchar_t), fileDescriptorLength, fp);
-  //alwaysAssert(wcsncmp(writtenDescriptor, fileDescriptor, fileDescriptorLength) == 0);
+  alwaysAssert(wcsncmp(writtenDescriptor, fileDescriptor, fileDescriptorLength) == 0);
 
   // read in the matrices
   spline = std::make_shared<OpenHermiteSpline>();

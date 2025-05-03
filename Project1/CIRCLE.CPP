@@ -408,6 +408,13 @@ int CCircle::FitCircle(int npts, double *xp, double *yp)
     rad += h[2]; // Update rad
   }
 
+  if (iter == MAXITS)
+  {
+    for (i=0; i<npts; i++)
+      bugout(0, L"7 %f %f %d point in circle error", xp[i], yp[i]);
+    bugout(0, L"Warning: No convergence in est_circ");
+    bugout(0, L"13 %f %f %f", center[0], center[1], rad);
+  }
 
   // Compute the least squares error. The residuals are in f.
   ls_err = norm(npts,f) / sqrt((double) npts);

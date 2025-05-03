@@ -1049,8 +1049,8 @@ CNurbCurve::CNurbCurve(int n, double lextr, double textr, double ler, double ter
   CSubCurve *ccc = new CSubCurve(whole, t[1], t[2], period);
   CSubCurve *tec = new CSubCurve(whole, t[2], t[3], period);
   CSubCurve *cvc = new CSubCurve(whole, t[3], t[0] + period, period);
-  bugout(0, L"New CNurbCurve N=%d, cal MeanCamber***",n);
-  //MeanCamber(n, ccc, cvc, lec, tec, useextremes);//会出现问题 先临时注释
+
+  MeanCamber(n, ccc, cvc, lec, tec, useextremes);
 
   delete lec;
   delete ccc;
@@ -1324,7 +1324,7 @@ void CNurbCurve::Extent(double *min, double *max)
 void CNurbCurve::Write(FILE *fp)
 {
   int i;
-
+  bugout(0, L"Curve Write m_Num=%d, m_closed=%d", m_Num, m_closed);
   short curveType = NURB_TYPE;
   if (m_ppointk)
     curveType += (short)1000;

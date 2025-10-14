@@ -264,7 +264,7 @@
     <Import Project="..\packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\Hexagon.ThirdParty.QHull_____build.2016.05.28.targets" Condition="Exists('..\packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\Hexagon.ThirdParty.QHull_____build.2016.05.28.targets')" />
     <Import Project="..\packages\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.3.3.0.1\build\native\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.targets" Condition="Exists('..\packages\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.3.3.0.1\build\native\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.targets')" />
     <Import Project="..\packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\Hexagon.ThirdParty.Protobuf_MD.targets" Condition="Exists('..\packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\Hexagon.ThirdParty.Protobuf_MD.targets')" />
-    <Import Project="..\packages\Hexagon.ThirdParty.Eigen.3.3.4\build\native\Hexagon.ThirdParty.Eigen.targets" Condition="Exists('..\packages\Hexagon.ThirdParty.Eigen.3.3.4\build\native\Hexagon.ThirdParty.Eigen.targets')" />
+    <Import Project="..\packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\Hexagon.ThirdParty.Eigen.targets" Condition="Exists('..\packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\Hexagon.ThirdParty.Eigen.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -291,6 +291,6 @@
     <Error Condition="!Exists('..\packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\Hexagon.ThirdParty.QHull_____build.2016.05.28.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\Hexagon.ThirdParty.QHull_____build.2016.05.28.targets'))" />
     <Error Condition="!Exists('..\packages\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.3.3.0.1\build\native\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.3.3.0.1\build\native\hexagon.thirdparty.protobufcpp_MD__v110_Win32_Debug.targets'))" />
     <Error Condition="!Exists('..\packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\Hexagon.ThirdParty.Protobuf_MD.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Hexagon.ThirdParty.Protobuf_MD.3.3.0.4\build\native\Hexagon.ThirdParty.Protobuf_MD.targets'))" />
-    <Error Condition="!Exists('..\packages\Hexagon.ThirdParty.Eigen.3.3.4\build\native\Hexagon.ThirdParty.Eigen.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Hexagon.ThirdParty.Eigen.3.3.4\build\native\Hexagon.ThirdParty.Eigen.targets'))" />
+    <Error Condition="!Exists('..\packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\Hexagon.ThirdParty.Eigen.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\Hexagon.ThirdParty.Eigen.targets'))" />
   </Target>
 </Project>

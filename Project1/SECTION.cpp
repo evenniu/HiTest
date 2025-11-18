@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "Circle.h"
 #include "SubCurve.h"
-#include "BestFit.h"
+//#include "BestFit.h"
 
 #include "SmallestCircle.h"
 #include "SECTION.h"
 #include "SectionCurve.h"
+#include "MINMAX.H"
 #include "BestFits.h"
 #include "ArraySlicing.h"
 #include "HermiteCurve.h"
@@ -819,6 +820,839 @@ bool CSection::FitPoints(CFitParams& fp,int& index, double inchSize, double* mto
     }
     return true;
 }
+bool CSection::FitPointsV42(CFitParams& fp, int& index, double* mtols, double* ptols)
+{
+    // bugout(0, L"FitPoints for %s algorithm %d", m_name, fp.algorithm);
+    // bugout(0, L"fitcurve %d %d %d %d", fp.fitcurve[0], fp.fitcurve[1], fp.fitcurve[2], fp.fitcurve[3]);
+    // bugout(0, L"weightcurve %d %d %d %d", fp.weightcurve[0], fp.weightcurve[1], fp.weightcurve[2], fp.weightcurve[3]);
+
+    CBestFit* bf = new CBestFit(m_totalPoints);
+
+    double nose[2], range[2];
+
+    bool checkNose = false;
+    bool checkRange = false;
+    // zzz
+    if (fp.leoff2 > fp.leoff1 && NomPart(LEC) && NomPart(LEC)->Extreme() != -1.0)
+    {
+        NomPart(LEC)->CalcPoint(nose, NomPart(LEC)->Extreme());
+        checkNose = true;
+        // bugout(0, _T("10 %f %f N %s"), nose[0], nose[1], m_name);
+        if (fp.fitcurve[CVC] && !fp.fitcurve[CCC])
+        {
+            double cvp0[2], cvp1[2], lep0[2];
+
+            NomPart(CVC)->CalcPoint(cvp0, NomPart(CVC)->T0());
+            NomPart(CVC)->CalcPoint(cvp1, NomPart(CVC)->T1());
+            NomPart(LEC)->CalcPoint(lep0, NomPart(LEC)->T0());
+
+            if (dist(cvp0, lep0) < 1.0e-3 || dist(cvp1, lep0) < 1.0e-3) // want to keep the beginning of the le
+            {
+                range[0] = NomPart(LEC)->T0();
+                range[1] = NomPart(LEC)->Extreme();
+            }
+            else // want to keep end of the le
+            {
+                range[0] = NomPart(LEC)->Extreme();
+                range[1] = NomPart(LEC)->T1();
+            }
+            checkRange = true;
+        }
+        else if (fp.fitcurve[CCC] && !fp.fitcurve[CVC])
+        {
+            double ccp0[2], ccp1[2], lep0[2];
+
+            NomPart(CCC)->CalcPoint(ccp0, NomPart(CCC)->T0());
+            NomPart(CCC)->CalcPoint(ccp1, NomPart(CCC)->T1());
+            NomPart(LEC)->CalcPoint(lep0, NomPart(LEC)->T0());
+
+            if (dist(ccp0, lep0) < 1.0e-3 || dist(ccp1, lep0) < 1.0e-3) // want to keep the beginning of the le
+            {
+                range[0] = NomPart(LEC)->T0();
+                range[1] = NomPart(LEC)->Extreme();
+            }
+            else // want to keep end of the le
+            {
+                range[0] = NomPart(LEC)->Extreme();
+                range[1] = NomPart(LEC)->T1();
+            }
+            checkRange = true;
+        }
+    }
+    // zzz
+
+    // bugout(0, L"Maxiters %d", fp.maxiters);
+    int i, s;
+    for (i = 0; i < m_totalPoints; i++) // assign meas and nom points to bestfit
+    {
+        s = m_partOf[i];
+        bf->m_bestPartOf[i] = m_partOf[i];
+
+        bf->PutVal(i, m_mxpt[i], m_mypt[i]);
+        bf->PutNom(i, m_nxpt[i], m_nypt[i]);
+        bf->PutT(i, m_nomt[i]);
+        // bugout(0, L"9 %f %f %f %f FitPoints", m_mxpt[i], m_mypt[i], m_nxpt[i], m_nypt[i]);
+        // bugout(0, L"7 %f %f NomPoint", m_nxpt[i], m_nypt[i]);
+        // bugout(0, L"14 %f %f MeaPoint", m_mxpt[i], m_mypt[i]);
+
+        bf->Omega(i, 0.0); // default is no weight to fit.
+
+        if (s >= 0 && s <= 3)
+        {
+            if (fp.fitcurve[s] && m_nomPart[s])
+            {
+                bool usePoint = true;
+
+                if (checkNose)
+                {
+                    double np[2];
+                    np[0] = m_nxpt[i];
+                    np[1] = m_nypt[i];
+                    double d = dist(np, nose);
+                    if (d < fp.leoff1 || d > fp.leoff2)
+                        usePoint = false;
+                    else if (s == LEC && checkRange) // may need to toss point if on LEC, but on side of nose point that isn't
+                                                    // being kept
+                    {
+                        if (m_nomt[i] < range[0] || m_nomt[i] > range[1])
+                            usePoint = false;
+                    }
+                }
+
+                if (usePoint)
+                {
+                    // if (checkNose)
+                    //  bugout(0, _T("7 %f %f %s"), m_nxpt[i], m_nypt[i], m_name);
+                    bf->Omega(i, (double)fp.weightcurve[s]);
+                }
+            }
+        }
+    }
+
+    int maxiters = fp.maxiters;
+    if (maxiters < 1)
+        maxiters = 1;
+    if (maxiters > MAXITERS)
+        maxiters = MAXITERS;
+
+    if (fp.algorithm == BestFitAlgorithm::None) // no fit
+    {
+        for (i = 0; i < m_totalPoints; i++) // assign meas and nom points to bestfit
+            bf->PutInf(i, m_mxpt[i], m_mypt[i]);
+
+        RefindNomsV42(bf, fp, true, 0, NULL, mtols, ptols); // for form calculations
+
+        maxiters = 0;
+    }
+
+    double nlcp[2], ntcp[2], nlctr[2], ntctr[2], nltv[2], nttv[2];
+    double mlcp[2], mtcp[2], mlctr[2], mtctr[2], mltv[2], mttv[2];
+    if (!Chord(0, nlcp, ntcp, nlctr, ntctr, nltv, nttv) || !Chord(1, mlcp, mtcp, mlctr, mtctr, mltv, mttv))
+    {
+        delete bf;
+        return false;
+    }
+
+    double cl = dist(nlcp, ntcp);
+    double clm = dist(mlcp, mtcp);
+
+    CCurve* nommc = m_nomPart[MCC];
+
+    bool good = true;
+
+    bool usePivot = false;
+    double nomPiv[2], meaPiv[2];
+    if (fp.algorithm == BestFitAlgorithm::LeastSquares) // least squares
+    {
+        if (fp.pivot == 0 && fp.tranfit == 3) // le center
+        {
+            double r = 0.75 * cl;
+            double npt[2], mpt[2];
+            nommc->CircIntersect(nlcp, r, npt);
+            m_meaPart[MCC]->CircIntersect(mlcp, r, mpt);
+            if (bf->TwoPointFit(nlctr, npt, mlctr, mpt))
+            {
+                usePivot = true;
+                nomPiv[0] = nlctr[0];
+                nomPiv[1] = nlctr[1];
+                meaPiv[0] = mlctr[0];
+                meaPiv[1] = mlctr[1];
+                RefindNomsV42(bf, fp, false);
+            }
+            else
+                good = false;
+        }
+        else if (fp.pivot == 1 && fp.tranfit == 3) // le nose
+        {
+            double r = 0.75 * cl;
+            double npt[2], mpt[2];
+            nommc->CircIntersect(nlcp, r, npt);
+            m_meaPart[MCC]->CircIntersect(mlcp, r, mpt);
+            if (bf->TwoPointFit(nlcp, npt, mlcp, mpt))
+            {
+                usePivot = true;
+                nomPiv[0] = nlcp[0];
+                nomPiv[1] = nlcp[1];
+                meaPiv[0] = mlcp[0];
+                meaPiv[1] = mlcp[1];
+                RefindNomsV42(bf, fp, false);
+            }
+            else
+                good = false;
+        }
+        else if (fp.pivot == 2 && fp.tranfit == 3) // te center
+        {
+            double r = 0.75 * cl;
+            double npt[2], mpt[2];
+            nommc->CircIntersect(ntcp, r, npt);
+            m_meaPart[MCC]->CircIntersect(mtcp, r, mpt);
+            if (bf->TwoPointFit(ntctr, npt, mtctr, mpt))
+            {
+                usePivot = true;
+                nomPiv[0] = ntctr[0];
+                nomPiv[1] = ntctr[1];
+                meaPiv[0] = mtctr[0];
+                meaPiv[1] = mtctr[1];
+                RefindNomsV42(bf, fp, false);
+            }
+            else
+                good = false;
+        }
+        else if (fp.pivot == 3 && fp.tranfit == 3) // te tail
+        {
+            double r = 0.75 * cl;
+            double npt[2], mpt[2];
+            nommc->CircIntersect(ntcp, r, npt);
+            m_meaPart[MCC]->CircIntersect(mtcp, r, mpt);
+            if (bf->TwoPointFit(ntcp, npt, mtcp, mpt))
+            {
+                usePivot = true;
+                nomPiv[0] = ntcp[0];
+                nomPiv[1] = ntcp[1];
+                meaPiv[0] = mtcp[0];
+                meaPiv[1] = mtcp[1];
+                RefindNomsV42(bf, fp, false);
+            }
+            else
+                good = false;
+        }
+        else if (fp.fitcurve[LEC] == 1 && fp.fitcurve[TEC] == 0 && fp.fitcurve[CVC] == 0 && fp.fitcurve[CCC] == 0)
+        {
+            // LE only want to start with nose points aligned
+
+            if (LEType() == EDGE_NORMAL)
+            {
+                double r = 0.75 * cl;
+                double npt[2], mpt[2];
+                nommc->CircIntersect(nlcp, r, npt);
+                m_meaPart[MCC]->CircIntersect(mlcp, r, mpt);
+                if (bf->TwoPointFit(nlcp, npt, mlcp, mpt))
+                    RefindNomsV42(bf, fp, false);
+                else
+                    good = false;
+            }
+            else // square LE
+            {
+                double n0[2], n1[2], m0[2], m1[2];
+                NomPart(LEC)->CalcPoint(n0, NomPart(LEC)->T0());
+                NomPart(LEC)->CalcPoint(n1, NomPart(LEC)->T1());
+                MeaPart(LEC)->CalcPoint(m0, MeaPart(LEC)->T0());
+                MeaPart(LEC)->CalcPoint(m1, MeaPart(LEC)->T1());
+                if (bf->TwoPointFit(n0, n1, m0, m1))
+                    RefindNomsV42(bf, fp, false);
+                else
+                    good = false;
+            }
+        }
+        else if (fp.fitcurve[LEC] == 0 && fp.fitcurve[TEC] == 1 && fp.fitcurve[CVC] == 0 && fp.fitcurve[CCC] == 0)
+        {
+            // TE only want to start with tail points aligned
+            if (TEType() == EDGE_NORMAL)
+            {
+                double r = 0.75 * cl;
+                double npt[2], mpt[2];
+                nommc->CircIntersect(ntcp, r, npt);
+                m_meaPart[MCC]->CircIntersect(mtcp, r, mpt);
+                if (bf->TwoPointFit(ntcp, npt, mtcp, mpt))
+                    RefindNomsV42(bf, fp, false);
+                else
+                    good = false;
+            }
+            else
+            {
+                double n0[2], n1[2], m0[2], m1[2];
+                NomPart(TEC)->CalcPoint(n0, NomPart(TEC)->T0());
+                NomPart(TEC)->CalcPoint(n1, NomPart(TEC)->T1());
+                MeaPart(TEC)->CalcPoint(m0, MeaPart(TEC)->T0());
+                MeaPart(TEC)->CalcPoint(m1, MeaPart(TEC)->T1());
+                if (bf->TwoPointFit(n0, n1, m0, m1))
+                    RefindNomsV42(bf, fp, false);
+                else
+                    good = false;
+            }
+        }
+    }
+
+    // if(fp.algorithm == 2) // guillotine
+    //{
+    //  // guillotine only operates on CV or CC side
+    //  CCurve* gcurve = 0;
+
+    //  fp.fitcurve[LEC] = fp.fitcurve[TEC] = 0;
+
+    //  if(fp.fitcurve[CVC])
+    //    gcurve = m_nomPart[CVC];
+    //  else if(fp.fitcurve[CCC])
+    //    gcurve = m_nomPart[CCC];
+    //  else
+    //    good = false;
+
+    //  if(good)
+    //  {
+    //    if(bf->GuillotineFit(gcurve, fp))
+    //      RefindNoms(bf, fp, true, 0, NULL, mtols, ptols);
+    //    else
+    //      good = false;
+    //  }
+
+    //  maxiters = 0;
+    //}
+
+    if (fp.algorithm == BestFitAlgorithm::TwoPointsOnMCLFromNose) // two points on MCL - from nose
+    {
+        double r = 0.01 * fp.lepercent * cl;
+        double onom[2], pnom[2], omea[2], pmea[2];
+
+        if (!nommc->CircIntersect(nlcp, r, onom))
+            int_circ_line(nlcp, r, nlcp, nlctr, onom);
+        if (!m_meaPart[MCC]->CircIntersect(mlcp, r, omea))
+            int_circ_line(mlcp, r, mlcp, mlctr, omea);
+
+        r = 0.01 * fp.tepercent * clm;
+        if (!nommc->CircIntersect(nlcp, r, pnom))
+            int_circ_line(nlcp, r, ntctr, ntcp, pnom);
+        if (!m_meaPart[MCC]->CircIntersect(mlcp, r, pmea))
+        {
+            int_circ_line(mlcp, r, mtctr, mtcp, pmea);
+        }
+        if (bf->TwoPointFit(onom, pnom, omea, pmea))
+            RefindNomsV42(bf, fp, true, 0, NULL, mtols, ptols);
+        else
+            good = false;
+        // bugout(0, _T("10 %f %f NL"), onom[0], onom[1]);
+        // bugout(0, _T("10 %f %f NT"), pnom[0], pnom[1]);
+        double xy[2];
+        bf->GetAlign()->MeasToBest(omea, 1, xy);
+        // bugout(0, _T("10 %f %f ML"), xy[0], xy[1]);
+        bf->GetAlign()->MeasToBest(pmea, 1, xy);
+        // bugout(0, _T("10 %f %f MT"), xy[0], xy[1]);
+
+        maxiters = 0;
+    }
+
+    if (fp.algorithm == BestFitAlgorithm::TwoPointsOnMCLFromTail) // two points on MCL - from tail
+    {
+        double r = 0.01 * fp.tepercent * cl;
+        double onom[2], pnom[2], omea[2], pmea[2];
+
+        if (!nommc->CircIntersect(ntcp, r, onom))
+            int_circ_line(ntcp, r, ntcp, ntctr, onom);
+        // bugout(0, _T("10 %lf %lf NT"), onom[0], onom[1]);
+
+        if (!m_meaPart[MCC]->CircIntersect(mtcp, r, omea))
+            int_circ_line(mtcp, r, mtcp, mtctr, omea);
+        // bugout(0, _T("10 %lf %lf MT"), omea[0], omea[1]);
+
+        r = 0.01 * fp.lepercent * clm;
+        if (!nommc->CircIntersect(ntcp, r, pnom))
+            int_circ_line(ntcp, r, nlctr, nlcp, pnom);
+        // bugout(0, _T("10 %lf %lf NN"), pnom[0], pnom[1]);
+
+        if (!m_meaPart[MCC]->CircIntersect(mtcp, r, pmea))
+            int_circ_line(mtcp, r, mlctr, mlcp, pmea);
+        // bugout(0, _T("10 %lf %lf MN"), pmea[0], pmea[1]);
+
+        if (bf->TwoPointFit(onom, pnom, omea, pmea))
+            RefindNomsV42(bf, fp, true, 0, NULL, mtols, ptols);
+        else
+            good = false;
+
+        maxiters = 0;
+    }
+    CMinMax* mmf = NULL;
+
+    if (fp.algorithm == BestFitAlgorithm::MinMax) // min max fit
+    {
+        fp.tranfit = fp.rotfit = -1; // who knows why this makes it happy.
+
+        if (bf->LeastSquaresFit(fp))
+            RefindNomsV42(bf, fp, false);
+
+        for (i = 0; i < m_totalPoints; i++) // assign meas and nom points to bestfit
+            bf->PutVec(i, m_ival[i], m_jval[i]);
+
+        mmf = new CMinMax(m_totalPoints);
+    }
+
+    if (fp.algorithm == BestFitAlgorithm::TwoPointsOnMCLForForgedBlade) // two points on MCL for forged blade
+    {
+        double lv[2]; // line vector in forge plane
+        double nv[2]; // normal vector of vorge plane
+        double ang = fp.forgeAngle * M_PI / 180;
+        lv[0] = cos(ang);
+        lv[1] = sin(ang);
+        nv[0] = lv[1];
+        nv[1] = -lv[0];
+
+        double rle = 0.01 * fp.lepercent * cl;
+        double rte = 0.01 * fp.tepercent * cl;
+
+        double tmid, orig[2], nple[2], npte[2], mple[2], mpte[2];
+        orig[0] = orig[1] = 0.0;
+
+        // find le point on nom mcl
+        if (!nommc->CircIntersect(nlcp, rle, nple))
+            int_circ_line(nlcp, rle, nlcp, nlctr, nple);
+        double srle = _hypot(nple[0], nple[1]);
+        // bugout(0, _T("10 %f %f NL"), nple[0], nple[1]);
+
+        // find te point on nom mcl
+        if (!nommc->CircIntersect(nlcp, rte, npte))
+            int_circ_line(nlcp, rte, ntctr, ntcp, npte);
+        double srte = _hypot(npte[0], npte[1]);
+        // bugout(0, _T("10 %f %f NT"), npte[0], npte[1]);
+
+        double norig[2], morig[2], ndir[2], mdir[2], nother[2], mother[2];
+
+        ndir[0] = npte[0] - nple[0];
+        ndir[1] = npte[1] - nple[1];
+        normalize(ndir, ndir);
+        int_line_line(orig[0], orig[1], nv[0], nv[1], nple[0], nple[1], ndir[0], ndir[1], &norig[0], &norig[1]);
+
+        double deltaLE = dist(norig, nple);
+        double deltaTE = dist(norig, npte);
+
+        m_meaPart[MCC]->ClosestPoint(orig, lv, &tmid); // find approximate location of origin on mcl
+
+        if (!m_meaPart[MCC]->CircIntersect(orig, srle, mple, m_meaPart[MCC]->T0(), tmid))
+            int_circ_line(orig, srle, mlctr, mlcp, mple);
+        // bugout(0, _T("10 %f %f ML"), mple[0], mple[1]);
+
+        if (!m_meaPart[MCC]->CircIntersect(orig, srte, mpte, tmid, m_meaPart[MCC]->T1()))
+            int_circ_line(orig, srte, mtctr, mtcp, mpte);
+        // bugout(0, _T("10 %f %f MT"), mpte[0], mpte[1]);
+
+        mdir[0] = mpte[0] - mple[0];
+        mdir[1] = mpte[1] - mple[1];
+        normalize(mdir, mdir);
+        int_line_line(orig[0], orig[1], nv[0], nv[1], mple[0], mple[1], mdir[0], mdir[1], &morig[0], &morig[1]);
+
+        if (deltaLE > deltaTE)
+        {
+            nother[0] = nple[0];
+            nother[1] = nple[1];
+            mother[0] = morig[0] - deltaLE * mdir[0];
+            mother[1] = morig[1] - deltaLE * mdir[1];
+        }
+        else
+        {
+            nother[0] = npte[0];
+            nother[1] = npte[1];
+            mother[0] = morig[0] + deltaTE * mdir[0];
+            mother[1] = morig[1] + deltaTE * mdir[1];
+        }
+
+        // bugout(0, _T("10 %f %f N"), norig[0], norig[1]);
+        // bugout(0, _T("10 %f %f N"), nother[0], nother[1]);
+        // bugout(0, _T("10 %f %f M"), morig[0], morig[1]);
+        // bugout(0, _T("10 %f %f M"), mother[0], mother[1]);
+
+        if (bf->TwoPointFit(norig, nother, morig, mother))
+            RefindNomsV42(bf, fp, true, 0, NULL, mtols, ptols);
+        else
+            good = false;
+
+        maxiters = 0;
+    }
+    if (!good)
+    {
+        delete bf;
+        return false;
+    }
+
+    double lsq;
+
+    CMatrix* lastInf = new CMatrix(m_totalPoints, 2);
+
+    int iter;
+    for (iter = 0; iter < maxiters; iter++)
+    {
+        if (iter > 0)
+        {
+            for (i = 0; i < m_totalPoints; i++)
+            {
+                lastInf->m[i][0] = bf->m_infs->m[i][0];
+                lastInf->m[i][1] = bf->m_infs->m[i][1];
+            }
+        }
+        /* FIX ME LATER
+
+        if (fp.algorithm == 5 && vf)
+        {
+        vf->TransferIn(bf->m_noms, bf->m_vals, bf->m_ijks, bf->m_omega, &bf->m_align);
+        good = vf->vect_fit();
+        vf->TransferOut(bf->m_infs, &bf->m_align);
+        }
+        else
+        */
+        if (fp.algorithm == BestFitAlgorithm::MinMax && mmf)
+        {
+            mmf->TransferIn(bf->m_noms, bf->m_vals, bf->m_omega, &bf->m_align);
+            good = mmf->MinMaxFit();
+            // bugout(0, _T("MinMaxFit iteration %d"), iter);
+            mmf->TransferOut(bf->m_infs, &bf->m_align);
+        }
+        else
+        {
+            if (usePivot)
+                good = bf->LeastSquaresFit(fp, nomPiv, meaPiv);
+            else
+                good = bf->LeastSquaresFit(fp);
+        }
+
+        if (!good)
+            break;
+
+        bool breakOut = false;
+        if (iter == maxiters - 1) // need to check alignment somehow too
+        {
+            breakOut = true;
+        }
+
+        if (iter > 0)
+        {
+            // compute max distance distance between vals and infs
+            double maxDist = 0.0;
+            for (i = 0; i < m_totalPoints; i++)
+            {
+                double last[2], inf[2];
+                inf[0] = bf->m_infs->m[i][0];
+                inf[1] = bf->m_infs->m[i][1];
+                last[0] = lastInf->m[i][0];
+                last[1] = lastInf->m[i][1];
+                double d = dist(last, inf);
+                if (d > maxDist)
+                    maxDist = d;
+
+                // if (iter == 0)
+                //  bugout(0, _T("8 %lf %lf %lf %lf %lf"), last[0], last[1], inf[0], inf[1], d);
+                // else if (iter == 9)
+                //  bugout(0, _T("9 %lf %lf %lf %lf %lf"), last[0], last[1], inf[0], inf[1], d);
+            }
+            // bugout(0, _T("iter %d maxDist %lf stopDist %lf"), iter, maxDist, fp.stopDist);
+
+            if (maxDist < 0) //42memo
+                breakOut = true;
+        }
+        // test maxDist and break out if it is sufficiently small.
+
+        RefindNomsV42(bf, fp, breakOut, 0, &lsq, mtols, ptols);
+        if (breakOut)
+            break;
+    }
+
+    delete lastInf;
+
+    index = m_numBestFits;
+    m_bestFits[m_numBestFits] = bf;
+    m_numBestFits++;
+
+    if (mmf)
+        delete mmf;
+
+    // bugout(0, _T("Fit Measured Points %s (%d) LSQ = %lf"), m_name, index, lsq);
+
+    /* FIX ME LATER
+    if (vf)
+    delete vf;
+    */
+
+    return true;
+}
+
+bool CSection::RefindNomsV42(CBestFit* bf, CFitParams& fp, bool finalTime, int offset, double* lsq, double* mtols, double* ptols, bool useRanges)
+{
+    if (!bf || !m_meaCurve || !m_meaPart[CVC] || !m_meaPart[CCC] || !m_meaPart[LEC] || !m_meaPart[TEC])
+        return false;
+
+    if (!m_nomCurve)
+        return false;
+
+    // if (finalTime) bugout(0, _T("FitCurves %d %d %d %d"), fp.fitcurve[0], fp.fitcurve[1], fp.fitcurve[2],
+    // fp.fitcurve[3]);
+
+    int s;
+    double t0[4], t1[4], nt0[4], nt1[4];
+    for (s = 0; s < 4; s++)
+    {
+        t0[s] = m_meaPart[s]->T0();
+        t1[s] = m_meaPart[s]->T1();
+        nt0[s] = m_nomPart[s]->T0();
+        nt1[s] = m_nomPart[s]->T1();
+        bf->m_mindev[s] = 1.0e20;
+        bf->m_maxdev[s] = -1.0e20;
+        bf->m_meandev[s] = bf->m_stddev[s] = 0.0;
+    }
+
+    double period = m_meaCurve->Period();
+    double nperiod = m_nomCurve->Period();
+    m_meaCurve->Align(bf->GetAlign());
+    double sum[4], sumsq[4];
+    int num[4];
+    int totalBad = 0, totalChecked = 0;
+    sum[0] = 0.0;
+    sumsq[0] = 0.0;
+    num[0] = 0;
+    sum[1] = 0.0;
+    sumsq[1] = 0.0;
+    num[1] = 0;
+    sum[2] = 0.0;
+    sumsq[2] = 0.0;
+    num[2] = 0;
+    sum[3] = 0.0;
+    sumsq[3] = 0.0;
+    num[3] = 0;
+
+    double bnt = 0.0, bmt = 0.0;
+    double lastd = 2000.0;
+    bool kickstart = false;
+
+    double totalsumsq = 0.0;
+    int numChecked = 0;
+    for (int j = 0; j < m_totalPoints; j++)
+    {
+        double best[2], nom[2], nv[2], ntv[2];
+
+        bf->GetInf(j + offset, best);
+
+        // This is much quicker if each point can seed the next point (seed = -1).
+        // But this doesn't work for partial sections.
+        // Fully checking every point is slow, but don't know where the break is at this point.
+        // First hint that something is wrong, is if point does not project onto measured curve.
+        // This distance should be zero.
+
+        int mseed = j == 0 ? 400 : -1; // exhaustive search for first point only.
+        int nnseed = j == 0 ? 400 : -1;
+        int nbseed = j == 0 ? 400 : -1;
+
+        double d = m_meaCurve->ClosestPoint(best, nom, &bmt, 0, 0., 0., mseed);
+        if (d > 0.0001)
+        {
+            mseed = 400; // found wrong point, perform more exhaustive search
+            d = m_meaCurve->ClosestPoint(best, nom, &bmt, 0, 0., 0., mseed);
+        }
+
+        // this is probably useless, we set below based on where the point projects nominally...
+        for (s = 0; s < 4; s++)
+            if ((bmt >= t0[s] && bmt < t1[s]) || (bmt + period >= t0[s] && bmt + period < t1[s]))
+                break;
+
+        nv[0] = m_ival[j];
+        nv[1] = m_jval[j];
+
+        normalize(nv, nv);
+        int usenorm = ((fabs(nv[0]) <= 1.0) && (fabs(nv[1]) <= 1.0) && (l2norm(nv) > 0.0));
+        d = 2000.0;
+        // bugout(0, _T("A bnt %f"), bnt);
+
+        if (usenorm)
+        {
+            if (kickstart)
+                nnseed = 400;
+
+            // d = m_nomCurve->ClosestNominal(best, nv, nom, &bnt, 0, 0., 0., j == 0 ? 400 : -1);
+            d = m_nomCurve->ClosestNominal(best, nv, nom, &bnt, ntv, 0., 0., nnseed);
+            // if (finalTime) bugout(0, _T("d=%f lastd=%f %s j=%d"), d, lastd, m_name, j);
+            if (lastd < 1000.0 && lastd > 1.0e-6 && d / lastd > 50)
+                d += 2000.0;
+            // bugout(0, _T("A bnt %f (d=%f)"), bnt, d);
+        }
+
+        if (d > 1000.0) // not usenorm of ClosestNominal failed
+        {
+            // d = m_nomCurve->ClosestPoint(best, nom, &bnt, 0, 0., 0., j == 0 ? 400 : -1);
+            if (usenorm)
+            {
+                kickstart = true;
+                nbseed = 600;
+            }
+            d = m_nomCurve->ClosestPoint(best, nom, &bnt, ntv, 0., 0., nbseed);
+        }
+
+        lastd = d;
+
+        double dist, ijk[2];
+        ijk[0] = best[0] - nom[0];
+        ijk[1] = best[1] - nom[1];
+        normalize(ijk, ijk);
+        normalize(ntv, ntv);
+
+        int nns;
+        for (nns = 0; nns < 4; nns++)
+            if ((bnt >= nt0[nns] && bnt < nt1[nns]) || (bnt + nperiod >= nt0[nns] && bnt + nperiod < nt1[nns]))
+                break;
+
+        if (nns < 4)
+            s = nns;
+
+        // if this is a partial section and we are close to the end missing, we should do closest point
+        if (m_leType == EDGE_PARTIAL)
+        {
+            if (bnt > nt0[LEC] - 0.04 * nperiod && bnt < nt1[LEC] + 0.04 * nperiod)
+            {
+                if (fabs(dot(ijk, ntv)) > 0.05) // more than about 3 degrees off
+                    s = LEC;
+            }
+        }
+
+        if (m_teType == EDGE_PARTIAL)
+        {
+            if (bnt > nt0[TEC] - 0.04 * nperiod && bnt < nt1[TEC] + 0.04 * nperiod)
+            {
+                if (fabs(dot(ijk, ntv)) > 0.05) // more than about 3 degrees off
+                    s = TEC;
+            }
+        }
+
+        if (s < 4)
+            bf->m_bestPartOf[j + offset] = s;
+        else
+            s = bf->m_bestPartOf[j + offset]; // shouldn't happen
+
+        if (bnt > m_nomCurve->Period()) // need to get this back in the domain, for next loop
+            bnt -= m_nomCurve->Period();
+        if (bnt < 0.0)
+            bnt += m_nomCurve->Period();
+
+        double oldnom[2], shift[2];
+        bf->GetNom(j + offset, oldnom);
+        shift[0] = nom[0] - oldnom[0];
+        shift[1] = nom[1] - oldnom[1];
+
+        // double sd = dot(shift, shift);
+        // if (sd > maxshift)
+        // maxshift = sd;
+        // sumshift[0] += shift[0];
+        // sumshift[1] += shift[1];
+
+        bf->PutNom(j + offset, nom[0], nom[1]);
+        bf->PutT(j + offset, bnt);
+        // don't change Omega values when doing LE Arc LS fit
+
+        if (fp.leoff1 >= fp.leoff2)
+            bf->Omega(j + offset, 0.0); // default is no weight to fit.
+
+        if (fp.algorithm == BestFitAlgorithm::MinMax && s == LEC && fp.fitcurve[LEC] && !fp.fitcurve[TEC] && !fp.fitcurve[CVC] &&
+            !fp.fitcurve[CCC]) // LE Only
+        {
+        }
+        else if (fp.algorithm == BestFitAlgorithm::MinMax && s == TEC && fp.fitcurve[TEC] && !fp.fitcurve[LEC] &&
+            !fp.fitcurve[CVC] &&
+            !fp.fitcurve[CCC]) // TE Only
+        {
+        }
+
+        if (fp.leoff1 >= fp.leoff2)
+            if (s >= 0 && s <= 3)
+                if (fp.fitcurve[s])
+                    bf->Omega(j + offset, (double)fp.weightcurve[s]);
+
+        /*  Try weighting points based on projected deviation.
+        if (!finalTime)  // don't need to do this until bestfit is completed
+        continue;
+        */
+
+        // for full blade LE arc fit, set weight to zero if nominal parameter isn't in the range
+        if (useRanges)
+        {
+            if (!ParameterInRange(bnt, m_arcRangeCV[0], m_arcRangeCV[1], m_nomCurve->Period()) &&
+                !ParameterInRange(bnt, m_arcRangeCC[0], m_arcRangeCC[1], m_nomCurve->Period()))
+                bf->Omega(j + offset, 0.0);
+            else
+            {
+                // bugout(0, L"14 %lf %lf %s j=%d", nom[0], nom[1], m_name, j);
+            }
+        }
+
+        int flip = 1;
+
+        double dummy[2], tp[2];
+        m_nomCurve->CalcPoint(dummy, /*m_nomt[j]*/ bnt, tp);
+
+        if (curl(ijk, tp) < 0.0)
+            flip *= -1;
+
+        ijk[0] *= flip;
+        ijk[1] *= flip;
+
+        dist = (best[0] - nom[0]) * ijk[0] + (best[1] - nom[1]) * ijk[1];
+        // bugout(0, _T("dist %f"), dist);
+
+        bf->PutVec(j + offset, ijk[0], ijk[1]);
+
+        if (dist < bf->m_mindev[s]) // for form calculations
+            bf->m_mindev[s] = dist;
+        if (dist > bf->m_maxdev[s])
+            bf->m_maxdev[s] = dist;
+
+        num[s]++;
+        sum[s] += dist;
+        sumsq[s] += dist * dist;
+        totalsumsq += dist * dist; // for debug
+
+        if (mtols && ptols)
+        {
+            if (dist < mtols[s] || dist > ptols[s])
+                totalBad++;
+            totalChecked++;
+        }
+
+        if (bf->Omega(j + offset) <= 0.0)
+            continue;
+        numChecked++;
+        // if (finalTime) bugout(2, _T("point %3d dist %.4f dist^2 %.8f"), j, dist, dist*dist);
+    }
+
+    if (lsq)
+        *lsq = totalsumsq;
+
+    bf->m_totalBad = totalBad;
+    bf->m_totalChecked = totalChecked;
+
+    // double sss = 0.0;
+    for (s = 0; s < 4; s++)
+    {
+        if (num[s] > 0)
+            bf->m_meandev[s] = sum[s] / num[s];
+
+        if (num[s] > 1)
+        {
+            // bugout(0, _T(" sum sq (%d) %f %s"), s, sumsq[s], m_name);
+            // sss += sumsq[s];
+            bf->m_stddev[s] = (sumsq[s] - (sum[s] * sum[s]) / (double)num[s]) / (num[s] - 1.0);
+            bf->m_stddev[s] = sqrt(bf->m_stddev[s]);
+        }
+    }
+    m_meaCurve->Align(NULL);
+
+    return true;
+}
+
+bool CSection::RefindMeasV42(CBestFit* bf, CFitParams& fp, bool finalTime, bool firsttime, int offset, double* lsq)
+{
+    return false;
+}
+
 bool CSection::AssignPoints(double* xv, double* yv, int n, int* /*start*/, int* /*end*/)
 {
     // this is for closed curve for P&W AS file read and analysis file

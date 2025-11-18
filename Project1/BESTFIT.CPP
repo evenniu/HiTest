@@ -11,7 +11,7 @@
 #endif  // _DEBUG
 
 CBestFit::CBestFit(int np) : m_numpts(np), m_vals(0), m_infs(0), m_noms(0), m_ijks(0), m_omega(0), /*m_b(0), m_Q(0), m_Q1(0),
-m_xbar(0), m_gcurve(0),*/ m_btxpt(0), m_btypt(0), m_outtol(0), m_bestPartOf(0), m_vartol(0), m_LEvartol(0), m_t(0)
+m_xbar(0),*/ m_gcurve(0), m_btxpt(0), m_btypt(0), m_outtol(0), m_bestPartOf(0), m_vartol(0), m_LEvartol(0), m_t(0)
 {
   if (np > 0)
   {
@@ -101,10 +101,10 @@ bool CBestFit::LeastSquaresFit(CFitParams &fp, double *nompt, double *meapt)
   int i,j;
 
   Eigen::Map<const Eigen::VectorXd> eigenOmega(m_omega->v, m_numpts);
-  /*if(eigenOmega.squaredNorm() == 0.0)
+  if(eigenOmega.squaredNorm() == 0.0)
   {
     throw std::logic_error("No weight left at all!");
-  }*/
+  }
 
   CVector Xmean(2);
   CVector Zmean(2);
@@ -262,6 +262,102 @@ bool CBestFit::LeastSquaresFit(CFitParams &fp, double *nompt, double *meapt)
   }
 
   return true;
+}
+
+bool CBestFit::TwoPointFit(double* n1, double* n2, double* m1, double* m2)
+{
+    double vm[2], vn[2]; // point one to point 2 vectors.
+
+    vm[0] = m2[0] - m1[0];
+    vm[1] = m2[1] - m1[1];
+    vn[0] = n2[0] - n1[0];
+    vn[1] = n2[1] - n1[1];
+
+    // double num = vn[1]*vm[0] - vn[0]*vm[1];
+    // double den = vn[0]*vm[0] + vn[1]*vm[1];
+
+    double num = curl(vm, vn);
+    double den = dot(vm, vn);
+
+    if (fabs(den) < 1.0e-12)
+        return false;
+
+    // set rotation
+    double Theta = atan(num / den);
+
+    normalize(vm, vm);
+    normalize(vn, vn);
+    Theta = acos(dot(vm, vn));
+    if (curl(vm, vn) < 0.0)
+        Theta *= -1.0;
+
+    // set translation points
+    m_align.m_borig[0] = n1[0];
+    m_align.m_borig[1] = n1[1];
+    m_align.m_morig[0] = m1[0];
+    m_align.m_morig[1] = m1[1];
+
+    m_align.m_mat[0][0] = m_align.m_mat[1][1] = cos(Theta);
+    m_align.m_mat[1][0] = sin(Theta);
+    m_align.m_mat[0][1] = -m_align.m_mat[1][0];
+
+    for (int i = 0; i < m_numpts; i++)
+    {
+        double meas[2], bfit[2];
+
+        meas[0] = m_vals->m[i][0];
+        meas[1] = m_vals->m[i][1];
+
+        m_align.MeasToBest(meas, 1, bfit);
+
+        m_infs->m[i][0] = bfit[0];
+        m_infs->m[i][1] = bfit[1];
+    }
+
+    return true;
+}
+
+bool CBestFit::SetMinMaxY(double twist)
+{
+    double dmax = -1.0e20;
+    double s = sin(twist);
+    double c = cos(twist);
+    for (int i = 0; i < m_numpts; i++)
+    {
+        double xyz[2], ijk[2], sol[2];
+
+        if (m_omega->v[i] < 0.1) // this point is referenced
+            continue;
+
+        double xo = m_vals->m[i][0];
+        double yo = m_vals->m[i][1];
+        xyz[0] = xo * c - yo * s;
+        xyz[1] = xo * s + yo * c + m_MinMaxY;
+        ijk[0] = 0.0;
+        ijk[1] = 1.0;
+
+        // calculate vertical distance from meas point to curve
+        double d;
+        if (!m_gcurve->LineIntersect(xyz, ijk, sol, 0.0, 0.0, 0, &d))
+            return false;
+
+        if ((xyz[1] - sol[1]) * m_ijks->m[i][1] < 0.0)
+            d *= -1.0;
+
+        if (d > dmax)
+            dmax = d;
+    }
+
+    if (m_ijks->m[m_numpts / 2][1] > 0.0)
+        dmax *= -1.0;
+    m_MinMaxY += dmax;
+
+    return true;
+}
+
+bool CBestFit::GuillotineFit(CCurve* c, CFitParams& fp)
+{
+    return false;
 }
 
 bool CBestFit::Omega()                  // fill m_omega array
@@ -593,14 +689,174 @@ bool CBestFit::ReturnFit(double *x, double *y, double *theta, int method)
 
     normalize(vm, vm);
     normalize(vn, vn);
-
-    *theta = 180.0*acos(dot(vm, vn))/M_PI;
+    double dt1 = dot(vm, vn);
+    if (dt1 > 1)
+    {
+        dt1 = 1;
+    }
+    if (dt1 < -1)
+    {
+        dt1 = -1;
+    }
+    *theta = 180.0*acos(dt1)/M_PI;
     if (curl(vn, vm) > 0.0)                 // backwards to agree with way done in past
       *theta *= -1.0;
     //bugout(0, _T("%f %f %f is returned by method 1"), *x, *y, *theta);
   }
 
   return true;
+}
+
+double CBestFit::GuillotineMetric(double theta)
+{
+    if (!m_gcurve) // doesn't seem to be used here??
+        return 0.0;
+
+    double dmax = -1.0e20;
+    double s = sin(theta);
+    double c = cos(theta);
+
+    for (int i = 0; i < m_numpts; i++)
+    {
+        double xyz[2];
+
+        if (m_omega->v[i] < 0.1) // this point is referenced
+            continue;
+
+        double xo = m_infs->m[i][0];
+        double yo = m_infs->m[i][1];
+        xyz[0] = xo * c - yo * s;
+        xyz[1] = xo * s + yo * c;
+
+        double d;
+
+        // calculate approximate vertical distance from meas point to curve
+
+        double nx = m_noms->m[i][0];
+        double ny = m_noms->m[i][1];
+        if (m_xlate == 1) // move to mtol
+        {
+            nx += m_MTol * m_ijks->m[i][0];
+            ny += m_MTol * m_ijks->m[i][1];
+        }
+        else if (m_xlate == 3) // move to ptol
+        {
+            nx += m_PTol * m_ijks->m[i][0];
+            ny += m_PTol * m_ijks->m[i][1];
+        }
+
+        double sx, sy;
+        if (int_line_line(nx, ny, m_ijks->m[i][1], -m_ijks->m[i][0], xyz[0], xyz[1], 0.0, 1.0, &sx, &sy))
+        {
+            d = fabs(xyz[1] - sy);
+            if ((xyz[1] - sy) * m_ijks->m[i][1] < 0.0)
+                d = -fabs(d);
+        }
+        else
+        {
+            d = _hypot(xyz[0] - nx, xyz[1] - ny) / fabs(m_ijks->m[i][1]);
+            if ((xyz[1] - ny) * m_ijks->m[i][1] < 0.0)
+                d *= -1.0;
+        }
+
+        if (d > dmax)
+            dmax = d;
+    }
+    return dmax;
+}
+
+double CBestFit::MinMaxMetric(double theta)
+{
+    if (!m_gcurve)
+        return 0.0;
+
+    double dmin = 1.0e20;
+    double dmax = -1.0e20;
+    double s = sin(theta);
+    double c = cos(theta);
+
+    for (int i = 0; i < m_numpts; i++)
+    {
+        double bt, xyz[2], bxyz[2];
+
+        if (m_omega->v[i] < 0.1) // this point is referenced
+            continue;
+
+        // transform measured point
+
+        double xo = m_infs->m[i][0];
+        double yo = m_infs->m[i][1];
+        xyz[0] = xo * c - yo * s;
+        xyz[1] = xo * s + yo * c + m_MinMaxY;
+
+        // calculate approximate distance from meas point to curve
+
+        m_gcurve->ClosestPoint(xyz, bxyz, &bt);
+
+        // if (bt <= m_gcurve->T0() || bt >= m_gcurve->T1())  // rotated of edge
+        //    continue;  still okay???
+
+        double d = (xyz[0] - bxyz[0]) * m_ijks->m[i][0] + (xyz[1] - bxyz[1]) * m_ijks->m[i][1];
+
+        if (d > dmax)
+            dmax = d;
+
+        if (d < dmin)
+            dmin = d;
+    }
+
+    return dmax - dmin;
+}
+// function to find global (hopefully) minimum of a function, zfunc
+// zfunc is a pointer which should be set before calling
+
+#define GOLDEN 0.6180339887499 // golden ratio
+double CBestFit::zeroin(double a, double b, double tol, double* fval)
+{
+    double step = b - a;
+    double x = a + (1.0 - GOLDEN) * step;
+    double y = a + GOLDEN * step;
+
+    double fx = (this->*zfunc)(x);
+    double fy = (this->*zfunc)(y);
+
+    while (1)
+    {
+        if (fx < fy)
+        {
+            b = y;
+            step = b - a;
+            x = a + (1.0 - GOLDEN) * step;
+            y = a + GOLDEN * step;
+            fx = (this->*zfunc)(x);
+            fy = (this->*zfunc)(y);
+        }
+        else if (fy < fx)
+        {
+            a = x;
+            step = b - a;
+            x = a + (1.0 - GOLDEN) * step;
+            y = a + GOLDEN * step;
+            fx = (this->*zfunc)(x);
+            fy = (this->*zfunc)(y);
+        }
+        else
+        {
+            a = x;
+            b = y;
+            step = b - a;
+            x = a + (1.0 - GOLDEN) * step;
+            y = a + GOLDEN * step;
+            fx = (this->*zfunc)(x);
+            fy = (this->*zfunc)(y);
+        }
+
+        if (step < tol)
+            break;
+    }
+
+    *fval = (this->*zfunc)(0.5 * (a + b));
+    return 0.5 * (a + b);
 }
 
 CFitParams::CFitParams()
@@ -611,6 +867,7 @@ CFitParams::CFitParams()
     weightcurve[i] = 1;
   }
   algorithm = BestFitAlgorithm::LeastSquares;
+  maxiters = 3;
   rotfit = 0;
   tranfit = 0;
   fitToMiddleOfZone = 0;

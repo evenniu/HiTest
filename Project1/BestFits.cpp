@@ -582,9 +582,13 @@ bool validateLicense(const void* input, void* output)
   // that's done elsewhere and not available here
 
   const size_t uuidSize = boost::uuids::uuid::static_size();
-  const static boost::uuids::uuid secretPassword = {
+  const static boost::uuids::uuid secretPassword = 
+  {
     82, 10, 235, 29, 69, 239, 203, 60, 45, 149, 216, 31, 7, 36, 196, 94
-  };
+  };//bld
+ // { 40, 52, 64,  41,  162, 51,  195, 228, 45, 53, 154, 216, 60,  183, 236, 27 };
+
+
   //{ 59, 219, 129, 158, 46, 28, 103, 251, 125, 64, 63, 64, 208, 12, 243, 122 }; // this is the secret password for
   // testing
 

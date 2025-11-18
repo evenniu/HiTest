@@ -41,4 +41,6 @@ using namespace std;
 #include "AlwaysAssert.h"
 
 #define M_PI 3.14159265358979323846
+#define MAXITERS 30
+
 extern void bugout(int level, const WCHAR* fmt, ...);

@@ -127,7 +127,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)packages\Hexagon.GDT_Blade.redist.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;$(SolutionDir)packages\Hexagon.GDT_Blade.0.25.20190116.0\build\native\lib\x64\Debug\v140\cdecl;$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\hexagon.thirdparty.protobufcpp_MD__v140_x64_Debug.3.3.0.1\build\native\lib\x64\v140\Debug\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)packages\Hexagon.ThirdParty.Eigen.3.3.7\build\native\include;$(SolutionDir)packages\Hexagon.ThirdParty.QHull_____build.2016.05.28.2012.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\hexagon.thirdparty.protobufcpp_MD__v140_x64_Debug.3.3.0.1\build\native\lib\x64\v140\Debug\cdecl;$(SolutionDir)packages\Hexagon.GDT_PCDMIS.2.0.20210120.0\build\native\lib\x64\Debug\v142\cdecl;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libqhull.lib;GDT.lib;GDT_CPlusPlusInterface.lib;libprotobufd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -175,6 +175,7 @@
     <ClInclude Include="MATHUTIL.H" />
     <ClInclude Include="MATRIX.H" />
     <ClInclude Include="MeanCamberCurve.h" />
+    <ClInclude Include="MINMAX.H" />
     <ClInclude Include="MINSTOCK.H" />
     <ClInclude Include="Nominal.h" />
     <ClInclude Include="NominalFile.h" />
@@ -220,6 +221,7 @@
     <ClCompile Include="MATHUTIL.CPP" />
     <ClCompile Include="MATRIX.CPP" />
     <ClCompile Include="MeanCamberCurve.cpp" />
+    <ClCompile Include="MINMAX.CPP" />
     <ClCompile Include="MINSTOCK.CPP" />
     <ClCompile Include="Nominal.cpp" />
     <ClCompile Include="NominalFile.cpp" />

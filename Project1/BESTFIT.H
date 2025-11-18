@@ -22,6 +22,7 @@ public:
   int tranfit;
   int fitToMiddleOfZone;
   int pivot;
+  int maxiters;
   int usenominals;
   double lepercent;
   double tepercent;
@@ -78,9 +79,9 @@ public:
   }
 
   bool LeastSquaresFit(CFitParams& fp, double* nompt = 0, double* meapt = 0);
-  // bool TwoPointFit(double *n1, double *n2, double *m1, double *m2);
-  // bool SetMinMaxY(double twist);
-  // bool GuillotineFit(CCurve *c, CFitParams &fp);
+  bool TwoPointFit(double *n1, double *n2, double *m1, double *m2);
+  bool SetMinMaxY(double twist);
+  bool GuillotineFit(CCurve *c, CFitParams &fp);
   // bool VectorFit(CFitParams &fp, bool init);
 
   void XYDelta(double* xy);
@@ -180,12 +181,12 @@ protected:
   // CVector *m_b;
   // CVector *m_xbar;
 
-  // CCurve *m_gcurve;
-  // double (CBestFit::* zfunc)(double);
+   CCurve *m_gcurve;
+   double (CBestFit::* zfunc)(double);
 
-  // double GuillotineMetric(double theta);
-  // double MinMaxMetric(double theta);
-  // double zeroin(double a, double b, double tol, double *fval);
+   double GuillotineMetric(double theta);
+   double MinMaxMetric(double theta);
+   double zeroin(double a, double b, double tol, double *fval);
 
   //// vector internal fit functions
   // int Qfunc(double beta, double **Q);

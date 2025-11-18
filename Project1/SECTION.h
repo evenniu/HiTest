@@ -276,5 +276,9 @@ public:
 	int Chord(int flg, double* lcp, double* tcp, double* lctr, double* tctr, double* ltv, double* ttv, double* m = 0,
 		double* w = 0, double* tew = 0, double* zeroPt = 0);
 	bool FitPoints(CFitParams& fp, int& index, double inchSize, double* mtols = NULL, double* ptols = NULL);
-
+	bool FitPointsV42(CFitParams& fp, int& index, double* mtols = NULL, double* ptols = NULL);
+	bool RefindNomsV42(CBestFit* bf, CFitParams& fp, bool finalTime, int offset = 0, double* lsq = NULL,
+		double* mtols = NULL, double* ptols = NULL, bool useRanges = false);
+	bool RefindMeasV42(CBestFit* bf, CFitParams& fp, bool finalTime, bool firsttime = true, int offset = 0,
+		double* lsq = NULL);
 };
